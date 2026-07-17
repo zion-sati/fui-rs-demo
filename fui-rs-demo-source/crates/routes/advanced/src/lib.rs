@@ -64,7 +64,15 @@ impl AdvancedPage {
         let main_scroll = demo_scroll_box("mainScrollBox");
         main_scroll.fill_size().child(&body);
         Self {
-            root: ui! { selection_area().fill_size() { main_scroll } },
+            root: ui! {
+                selection_area()
+                    .fill_size()
+                    .bind_theme(|root, theme| {
+                        root.bg_color(theme.colors.background);
+                    }) {
+                        main_scroll
+                }
+            },
         }
     }
 }
