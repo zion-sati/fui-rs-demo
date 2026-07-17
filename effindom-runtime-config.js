@@ -1,0 +1,1 @@
+window.__effindomRuntime = Object.assign({}, window.__effindomRuntime, {"manifestUrls":["https://runtimes.effindom.dev/v2/manifests/Sv6sQRk7KAqHyFtqcrcKbptzQnnaGxZ6agVDzCOM7vE.json","/runtime/dist/effindom.v2.manifest.json"],"expectedRuntimeSetHash":"Sv6sQRk7KAqHyFtqcrcKbptzQnnaGxZ6agVDzCOM7vE","buildMode":"release","devToolsDomMirror":"on-requested"});

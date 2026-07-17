@@ -1,0 +1,15 @@
+[package]
+name = "fui-rs-demo-immediate-drawing"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "fui_rs_demo_immediate_drawing"
+crate-type = ["cdylib"]
+
+[dependencies]
+fui-rs = { workspace = true }
+fui_rs_demo_shared = { package = "fui-rs-demo-shared", path = "../../shared" }
+
+[features]
+native-runtime = ["fui-rs/native-runtime"]

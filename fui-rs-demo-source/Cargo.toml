@@ -1,0 +1,16 @@
+[workspace]
+members = ["crates/shared", "crates/advanced-worker", "crates/routes/*"]
+resolver = "2"
+
+[workspace.dependencies]
+fui-rs = { path = "node_modules/@effindomv2/fui-rs" }
+
+[profile.dev]
+debug = 0
+panic = "abort"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

@@ -1,0 +1,11 @@
+[package]
+name = "fui-rs-demo-advanced-worker"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fui-rs = { workspace = true, features = ["worker-runtime"] }
+
+[lib]
+name = "advanced_workers"
+crate-type = ["cdylib"]

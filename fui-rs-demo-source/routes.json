@@ -1,0 +1,28 @@
+{
+  "routes": [
+    {
+      "key": "home",
+      "routePath": "/",
+      "wasmPath": "/home.wasm",
+      "title": "Home"
+    },
+    {
+      "key": "text-fonts",
+      "routePath": "/text-fonts/",
+      "wasmPath": "/text-fonts.wasm",
+      "title": "Text & Fonts"
+    },
+    {
+      "key": "advanced",
+      "routePath": "/advanced/",
+      "wasmPath": "/advanced.wasm",
+      "title": "Advanced"
+    },
+    {
+      "key": "immediate-drawing",
+      "routePath": "/immediate-drawing/",
+      "wasmPath": "/immediate-drawing.wasm",
+      "title": "Immediate Drawing"
+    }
+  ]
+}

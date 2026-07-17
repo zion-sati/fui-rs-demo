@@ -1,0 +1,5 @@
+node_modules/
+public/
+published/
+target/
+*.log

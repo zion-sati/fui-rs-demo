@@ -1,0 +1,49 @@
+{
+  "name": "fui-rs-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "EffinDom FUI-RS public demo",
+  "scripts": {
+    "build": "npm run generate:host && npm run build:assets && npm run build:wasm && npm run build:workers && npm run build:harness && npm run build:worker-bootstrap && npm run build:worker-host-services",
+    "build:dev": "npm run generate:host && npm run build:assets && npm run build:wasm:dev && npm run build:workers:dev && npm run build:harness && npm run build:worker-bootstrap && npm run build:worker-host-services",
+    "build:assets": "tsx scripts/prepare-runtime.ts",
+    "build:wasm": "tsx scripts/build-wasm.ts --all --target release",
+    "build:wasm:dev": "tsx scripts/build-wasm.ts --all --target debug",
+    "build:harness": "esbuild harness.ts --bundle --format=esm --platform=browser --loader:.json=json --outfile=public/harness.js",
+    "generate:host-services": "tsx ./node_modules/@effindomv2/fui-rs/scripts/generate-host-services.ts host/host-services.ts appHostServices crates/shared/src/generated/host_services.rs fui::host_services",
+    "generate:host-events": "tsx scripts/generate-route-host-events.ts",
+    "generate:host": "npm run generate:host-services && npm run generate:host-events && npm run generate:worker-host-services",
+    "check": "cargo check --workspace",
+    "serve": "serve public --listen 8080",
+    "watch": "chokidar \"crates/**/*.rs\" \"host/**/*.ts\" \"Cargo.toml\" \"crates/**/Cargo.toml\" \"harness.ts\" \"index.html\" \"routes.json\" --ignore \"crates/**/src/generated/**\" -c \"npm run build:dev\"",
+    "dev": "npm run build:dev && concurrently -k -n watch,serve \"npm run watch\" \"npm run serve\"",
+    "test": "npm run test:unit && npm run lint:rust && npm run build && tsx scripts/smoke.ts",
+    "test:unit": "tsx --test scripts/wasm-build.test.ts",
+    "lint:rust": "cargo clippy --workspace --all-targets -- -D warnings",
+    "build:workers": "tsx scripts/build-worker-wasm.ts --all --target release",
+    "build:workers:dev": "tsx scripts/build-worker-wasm.ts --all --target debug",
+    "build:worker-bootstrap": "esbuild @effindomv2/runtime/worker-bootstrap --bundle --format=iife --platform=browser --outfile=public/worker-bootstrap.js",
+    "build:worker-host-services": "esbuild worker-host-services.ts --bundle --format=esm --platform=browser --outfile=public/worker-host-services.js",
+    "generate:worker-host-services": "tsx ./node_modules/@effindomv2/fui-rs/scripts/generate-host-services.ts host/worker-host-services.ts demoWorkerHostServices crates/advanced-worker/src/generated/worker_host_services.rs fui::host_services fui_host_service",
+    "publish": "npm run build && npm run publish:stage",
+    "publish:stage": "tsx scripts/stage-publish.ts"
+  },
+  "dependencies": {
+    "@effindomv2/fui-rs": "0.1.21",
+    "@effindomv2/runtime": "0.1.26"
+  },
+  "devDependencies": {
+    "chokidar-cli": "^3.0.0",
+    "concurrently": "^10.0.3",
+    "esbuild": "0.28.1",
+    "playwright": "1.59.1",
+    "serve": "^14.2.5",
+    "tsx": "^4.20.6"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "fsevents@2.3.2": true,
+    "fsevents@2.3.3": true
+  }
+}

@@ -1,0 +1,10 @@
+[package]
+name = "fui-rs-demo-shared"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "fui_rs_demo_shared"
+
+[dependencies]
+fui-rs = { workspace = true }
