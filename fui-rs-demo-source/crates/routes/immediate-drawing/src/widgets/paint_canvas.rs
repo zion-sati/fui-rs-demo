@@ -89,6 +89,7 @@ impl PaintCanvas {
         ]);
         hint.font_family(theme.fonts.body_family.clone())
             .font_size(24.0)
+            .text_color(rgba(0xeb, 0xee, 0xf5, 0xd2))
             .width(268.0, Unit::Pixel)
             .height(268.0, Unit::Pixel);
         let weak_state = Rc::downgrade(&state);
