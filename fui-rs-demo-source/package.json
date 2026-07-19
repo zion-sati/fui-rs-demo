@@ -30,7 +30,7 @@
     "publish:stage": "tsx scripts/stage-publish.ts"
   },
   "dependencies": {
-    "@effindomv2/fui-rs": "0.1.22",
+    "@effindomv2/fui-rs": "0.1.24",
     "@effindomv2/runtime": "0.1.26"
   },
   "devDependencies": {
