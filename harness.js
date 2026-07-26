@@ -1,360 +1,3 @@
-// node_modules/@assemblyscript/loader/index.js
-var ID_OFFSET = -8;
-var SIZE_OFFSET = -4;
-var ARRAYBUFFER_ID = 1;
-var STRING_ID = 2;
-var ARRAYBUFFERVIEW = 1 << 0;
-var ARRAY = 1 << 1;
-var STATICARRAY = 1 << 2;
-var VAL_ALIGN_OFFSET = 6;
-var VAL_SIGNED = 1 << 11;
-var VAL_FLOAT = 1 << 12;
-var VAL_MANAGED = 1 << 14;
-var ARRAYBUFFERVIEW_BUFFER_OFFSET = 0;
-var ARRAYBUFFERVIEW_DATASTART_OFFSET = 4;
-var ARRAYBUFFERVIEW_BYTELENGTH_OFFSET = 8;
-var ARRAYBUFFERVIEW_SIZE = 12;
-var ARRAY_LENGTH_OFFSET = 12;
-var ARRAY_SIZE = 16;
-var E_NO_EXPORT_TABLE = "Operation requires compiling with --exportTable";
-var E_NO_EXPORT_RUNTIME = "Operation requires compiling with --exportRuntime";
-var F_NO_EXPORT_RUNTIME = () => {
-  throw Error(E_NO_EXPORT_RUNTIME);
-};
-var BIGINT = typeof BigUint64Array !== "undefined";
-var THIS = /* @__PURE__ */ Symbol();
-var STRING_SMALLSIZE = 192;
-var STRING_CHUNKSIZE = 1024;
-var utf16 = new TextDecoder("utf-16le", { fatal: true });
-Object.hasOwn = Object.hasOwn || function(obj, prop) {
-  return Object.prototype.hasOwnProperty.call(obj, prop);
-};
-function getStringImpl(buffer, ptr) {
-  let len = new Uint32Array(buffer)[ptr + SIZE_OFFSET >>> 2] >>> 1;
-  const wtf16 = new Uint16Array(buffer, ptr, len);
-  if (len <= STRING_SMALLSIZE) return String.fromCharCode(...wtf16);
-  try {
-    return utf16.decode(wtf16);
-  } catch {
-    let str = "", off = 0;
-    while (len - off > STRING_CHUNKSIZE) {
-      str += String.fromCharCode(...wtf16.subarray(off, off += STRING_CHUNKSIZE));
-    }
-    return str + String.fromCharCode(...wtf16.subarray(off));
-  }
-}
-function preInstantiate(imports) {
-  const extendedExports = {};
-  function getString(memory, ptr) {
-    if (!memory) return "<yet unknown>";
-    return getStringImpl(memory.buffer, ptr);
-  }
-  const env = imports.env = imports.env || {};
-  env.abort = env.abort || function abort(msg, file, line, colm) {
-    const memory = extendedExports.memory || env.memory;
-    throw Error(`abort: ${getString(memory, msg)} at ${getString(memory, file)}:${line}:${colm}`);
-  };
-  env.trace = env.trace || function trace(msg, n, ...args) {
-    const memory = extendedExports.memory || env.memory;
-    console.log(`trace: ${getString(memory, msg)}${n ? " " : ""}${args.slice(0, n).join(", ")}`);
-  };
-  env.seed = env.seed || Date.now;
-  imports.Math = imports.Math || Math;
-  imports.Date = imports.Date || Date;
-  return extendedExports;
-}
-function postInstantiate(extendedExports, instance) {
-  const exports = instance.exports;
-  const memory = exports.memory;
-  const table = exports.table;
-  const __new = exports.__new || F_NO_EXPORT_RUNTIME;
-  const __pin = exports.__pin || F_NO_EXPORT_RUNTIME;
-  const __unpin = exports.__unpin || F_NO_EXPORT_RUNTIME;
-  const __collect = exports.__collect || F_NO_EXPORT_RUNTIME;
-  const __rtti_base = exports.__rtti_base;
-  const getTypeinfoCount = __rtti_base ? (arr) => arr[__rtti_base >>> 2] : F_NO_EXPORT_RUNTIME;
-  extendedExports.__new = __new;
-  extendedExports.__pin = __pin;
-  extendedExports.__unpin = __unpin;
-  extendedExports.__collect = __collect;
-  function getTypeinfo(id) {
-    const U32 = new Uint32Array(memory.buffer);
-    if ((id >>>= 0) >= getTypeinfoCount(U32)) throw Error(`invalid id: ${id}`);
-    return U32[(__rtti_base + 4 >>> 2) + id];
-  }
-  function getArrayInfo(id) {
-    const info = getTypeinfo(id);
-    if (!(info & (ARRAYBUFFERVIEW | ARRAY | STATICARRAY))) throw Error(`not an array: ${id}, flags=${info}`);
-    return info;
-  }
-  function getValueAlign(info) {
-    return 31 - Math.clz32(info >>> VAL_ALIGN_OFFSET & 31);
-  }
-  function __newString(str) {
-    if (str == null) return 0;
-    const length = str.length;
-    const ptr = __new(length << 1, STRING_ID);
-    const U16 = new Uint16Array(memory.buffer);
-    for (let i = 0, p = ptr >>> 1; i < length; ++i) U16[p + i] = str.charCodeAt(i);
-    return ptr;
-  }
-  extendedExports.__newString = __newString;
-  function __newArrayBuffer(buf) {
-    if (buf == null) return 0;
-    const bufview = new Uint8Array(buf);
-    const ptr = __new(bufview.length, ARRAYBUFFER_ID);
-    const U8 = new Uint8Array(memory.buffer);
-    U8.set(bufview, ptr);
-    return ptr;
-  }
-  extendedExports.__newArrayBuffer = __newArrayBuffer;
-  function __getString(ptr) {
-    if (!ptr) return null;
-    const buffer = memory.buffer;
-    const id = new Uint32Array(buffer)[ptr + ID_OFFSET >>> 2];
-    if (id !== STRING_ID) throw Error(`not a string: ${ptr}`);
-    return getStringImpl(buffer, ptr);
-  }
-  extendedExports.__getString = __getString;
-  function getView(alignLog2, signed, float) {
-    const buffer = memory.buffer;
-    if (float) {
-      switch (alignLog2) {
-        case 2:
-          return new Float32Array(buffer);
-        case 3:
-          return new Float64Array(buffer);
-      }
-    } else {
-      switch (alignLog2) {
-        case 0:
-          return new (signed ? Int8Array : Uint8Array)(buffer);
-        case 1:
-          return new (signed ? Int16Array : Uint16Array)(buffer);
-        case 2:
-          return new (signed ? Int32Array : Uint32Array)(buffer);
-        case 3:
-          return new (signed ? BigInt64Array : BigUint64Array)(buffer);
-      }
-    }
-    throw Error(`unsupported align: ${alignLog2}`);
-  }
-  function __newArray(id, valuesOrCapacity = 0) {
-    const input = valuesOrCapacity;
-    const info = getArrayInfo(id);
-    const align = getValueAlign(info);
-    const isArrayLike = typeof input !== "number";
-    const length = isArrayLike ? input.length : input;
-    const buf = __new(length << align, info & STATICARRAY ? id : ARRAYBUFFER_ID);
-    let result;
-    if (info & STATICARRAY) {
-      result = buf;
-    } else {
-      __pin(buf);
-      const arr = __new(info & ARRAY ? ARRAY_SIZE : ARRAYBUFFERVIEW_SIZE, id);
-      __unpin(buf);
-      const U32 = new Uint32Array(memory.buffer);
-      U32[arr + ARRAYBUFFERVIEW_BUFFER_OFFSET >>> 2] = buf;
-      U32[arr + ARRAYBUFFERVIEW_DATASTART_OFFSET >>> 2] = buf;
-      U32[arr + ARRAYBUFFERVIEW_BYTELENGTH_OFFSET >>> 2] = length << align;
-      if (info & ARRAY) U32[arr + ARRAY_LENGTH_OFFSET >>> 2] = length;
-      result = arr;
-    }
-    if (isArrayLike) {
-      const view = getView(align, info & VAL_SIGNED, info & VAL_FLOAT);
-      const start = buf >>> align;
-      if (info & VAL_MANAGED) {
-        for (let i = 0; i < length; ++i) {
-          view[start + i] = input[i];
-        }
-      } else {
-        view.set(input, start);
-      }
-    }
-    return result;
-  }
-  extendedExports.__newArray = __newArray;
-  function __getArrayView(arr) {
-    const U32 = new Uint32Array(memory.buffer);
-    const id = U32[arr + ID_OFFSET >>> 2];
-    const info = getArrayInfo(id);
-    const align = getValueAlign(info);
-    let buf = info & STATICARRAY ? arr : U32[arr + ARRAYBUFFERVIEW_DATASTART_OFFSET >>> 2];
-    const length = info & ARRAY ? U32[arr + ARRAY_LENGTH_OFFSET >>> 2] : U32[buf + SIZE_OFFSET >>> 2] >>> align;
-    return getView(align, info & VAL_SIGNED, info & VAL_FLOAT).subarray(buf >>>= align, buf + length);
-  }
-  extendedExports.__getArrayView = __getArrayView;
-  function __getArray(arr) {
-    const input = __getArrayView(arr);
-    const len = input.length;
-    const out = new Array(len);
-    for (let i = 0; i < len; i++) out[i] = input[i];
-    return out;
-  }
-  extendedExports.__getArray = __getArray;
-  function __getArrayBuffer(ptr) {
-    const buffer = memory.buffer;
-    const length = new Uint32Array(buffer)[ptr + SIZE_OFFSET >>> 2];
-    return buffer.slice(ptr, ptr + length);
-  }
-  extendedExports.__getArrayBuffer = __getArrayBuffer;
-  function __getFunction(ptr) {
-    if (!table) throw Error(E_NO_EXPORT_TABLE);
-    const index = new Uint32Array(memory.buffer)[ptr >>> 2];
-    return table.get(index);
-  }
-  extendedExports.__getFunction = __getFunction;
-  function getTypedArray(Type, alignLog2, ptr) {
-    return new Type(getTypedArrayView(Type, alignLog2, ptr));
-  }
-  function getTypedArrayView(Type, alignLog2, ptr) {
-    const buffer = memory.buffer;
-    const U32 = new Uint32Array(buffer);
-    return new Type(
-      buffer,
-      U32[ptr + ARRAYBUFFERVIEW_DATASTART_OFFSET >>> 2],
-      U32[ptr + ARRAYBUFFERVIEW_BYTELENGTH_OFFSET >>> 2] >>> alignLog2
-    );
-  }
-  function attachTypedArrayFunctions(ctor, name, align) {
-    extendedExports[`__get${name}`] = getTypedArray.bind(null, ctor, align);
-    extendedExports[`__get${name}View`] = getTypedArrayView.bind(null, ctor, align);
-  }
-  [
-    Int8Array,
-    Uint8Array,
-    Uint8ClampedArray,
-    Int16Array,
-    Uint16Array,
-    Int32Array,
-    Uint32Array,
-    Float32Array,
-    Float64Array
-  ].forEach((ctor) => {
-    attachTypedArrayFunctions(ctor, ctor.name, 31 - Math.clz32(ctor.BYTES_PER_ELEMENT));
-  });
-  if (BIGINT) {
-    [BigUint64Array, BigInt64Array].forEach((ctor) => {
-      attachTypedArrayFunctions(ctor, ctor.name.slice(3), 3);
-    });
-  }
-  extendedExports.memory = extendedExports.memory || memory;
-  extendedExports.table = extendedExports.table || table;
-  return demangle(exports, extendedExports);
-}
-function isResponse(src) {
-  return typeof Response !== "undefined" && src instanceof Response;
-}
-function isModule(src) {
-  return src instanceof WebAssembly.Module;
-}
-async function instantiate(source, imports = {}) {
-  if (isResponse(source = await source)) return instantiateStreaming(source, imports);
-  const module = isModule(source) ? source : await WebAssembly.compile(source);
-  const extended = preInstantiate(imports);
-  const instance = await WebAssembly.instantiate(module, imports);
-  const exports = postInstantiate(extended, instance);
-  return { module, instance, exports };
-}
-async function instantiateStreaming(source, imports = {}) {
-  if (!WebAssembly.instantiateStreaming) {
-    return instantiate(
-      isResponse(source = await source) ? source.arrayBuffer() : source,
-      imports
-    );
-  }
-  const extended = preInstantiate(imports);
-  const result = await WebAssembly.instantiateStreaming(source, imports);
-  const exports = postInstantiate(extended, result.instance);
-  return { ...result, exports };
-}
-function demangle(exports, extendedExports = {}) {
-  const setArgumentsLength = exports["__argumentsLength"] ? (length) => {
-    exports["__argumentsLength"].value = length;
-  } : exports["__setArgumentsLength"] || exports["__setargc"] || (() => {
-  });
-  for (let internalName of Object.keys(exports)) {
-    const elem = exports[internalName];
-    let parts = internalName.split(".");
-    let curr = extendedExports;
-    while (parts.length > 1) {
-      let part = parts.shift();
-      if (!Object.hasOwn(curr, part)) curr[part] = {};
-      curr = curr[part];
-    }
-    let name = parts[0];
-    let hash = name.indexOf("#");
-    if (hash >= 0) {
-      const className = name.substring(0, hash);
-      const classElem = curr[className];
-      if (typeof classElem === "undefined" || !classElem.prototype) {
-        const ctor = function(...args) {
-          return ctor.wrap(ctor.prototype.constructor(0, ...args));
-        };
-        ctor.prototype = {
-          valueOf() {
-            return this[THIS];
-          }
-        };
-        ctor.wrap = function(thisValue) {
-          return Object.create(ctor.prototype, { [THIS]: { value: thisValue, writable: false } });
-        };
-        if (classElem) Object.getOwnPropertyNames(classElem).forEach(
-          (name2) => Object.defineProperty(ctor, name2, Object.getOwnPropertyDescriptor(classElem, name2))
-        );
-        curr[className] = ctor;
-      }
-      name = name.substring(hash + 1);
-      curr = curr[className].prototype;
-      if (/^(get|set):/.test(name)) {
-        if (!Object.hasOwn(curr, name = name.substring(4))) {
-          let getter = exports[internalName.replace("set:", "get:")];
-          let setter = exports[internalName.replace("get:", "set:")];
-          Object.defineProperty(curr, name, {
-            get() {
-              return getter(this[THIS]);
-            },
-            set(value) {
-              setter(this[THIS], value);
-            },
-            enumerable: true
-          });
-        }
-      } else {
-        if (name === "constructor") {
-          (curr[name] = function(...args) {
-            setArgumentsLength(args.length);
-            return elem(...args);
-          }).original = elem;
-        } else {
-          (curr[name] = function(...args) {
-            setArgumentsLength(args.length);
-            return elem(this[THIS], ...args);
-          }).original = elem;
-        }
-      }
-    } else {
-      if (/^(get|set):/.test(name)) {
-        if (!Object.hasOwn(curr, name = name.substring(4))) {
-          Object.defineProperty(curr, name, {
-            get: exports[internalName.replace("set:", "get:")],
-            set: exports[internalName.replace("get:", "set:")],
-            enumerable: true
-          });
-        }
-      } else if (typeof elem === "function" && elem !== setArgumentsLength) {
-        (curr[name] = (...args) => {
-          setArgumentsLength(args.length);
-          return elem(...args);
-        }).original = elem;
-      } else {
-        curr[name] = elem;
-      }
-    }
-  }
-  return extendedExports;
-}
-
 // node_modules/@effindomv2/runtime/src/managed-harness/host-events.ts
 var IDENTIFIER_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 function hostEvent(definition) {
@@ -1130,6 +773,9 @@ function currentInteractionTimeMs() {
   return BigInt(Math.floor(performance.now()));
 }
 
+// node_modules/@effindomv2/runtime/src/managed-harness/host-environment.ts
+var browserHostCapabilities = 1 /* BrowserHistory */ | 2 /* Reload */ | 4 /* NewBrowsingContext */ | 8 /* OpenExternalUri */ | 16 /* ClipboardRead */ | 32 /* ClipboardWrite */ | 64 /* FileDialogs */;
+
 // node_modules/@effindomv2/runtime/src/managed-harness/host-imports.ts
 function createHostImportModule(deps) {
   function isPasswordTextInput(handle) {
@@ -1169,6 +815,9 @@ function createHostImportModule(deps) {
     },
     get_device_pixel_ratio() {
       return deps.platformHost.getDevicePixelRatio();
+    },
+    fui_set_application_caption(captionPtr, captionLen) {
+      deps.platformHost.setApplicationCaption(deps.readAppUtf8(captionPtr, captionLen));
     },
     fui_set_pointer_capture(handle) {
       deps.getRuntime().setCapturedPointerHandle(toBigIntHandle(handle));
@@ -1454,6 +1103,12 @@ function createHostImportModule(deps) {
     },
     fui_get_platform_family() {
       return deps.uiChrome.detectPlatformFamily();
+    },
+    fui_get_host_environment() {
+      return 1 /* Browser */;
+    },
+    fui_get_host_capabilities() {
+      return browserHostCapabilities;
     },
     fui_is_coarse_pointer() {
       return deps.uiChrome.detectCoarsePointer() ? 1 : 0;
@@ -3877,6 +3532,24 @@ var PLATFORM_FAMILY_LINUX = 3;
 var LOADING_OVERLAY_ID = "effindom-loading-overlay";
 var LOADING_TITLE_ID = "effindom-loading-title";
 var LOADING_DETAIL_ID = "effindom-loading-detail";
+var DEFAULT_LOADING_OVERLAY_STYLES = `
+.effindom-loading-overlay{--effindom-loader-color:#38bdf8;--effindom-loader-background:rgba(6,12,21,.88);position:absolute;inset:0;display:grid;place-items:center;padding:24px;box-sizing:border-box;background:linear-gradient(145deg,rgba(2,6,23,.76),rgba(15,23,42,.9));backdrop-filter:blur(10px);z-index:2;color:#e2e8f0;opacity:1;transition:opacity 140ms ease;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:default;user-select:none;-webkit-user-select:none}
+.effindom-loading-overlay[hidden]{display:none}.effindom-loading-card{max-width:420px;padding:24px 26px;border:1px solid rgba(148,163,184,.28);border-radius:20px;background:var(--effindom-loader-background);text-align:center;box-shadow:0 22px 60px rgba(2,6,23,.34)}
+.effindom-loading-visual{width:88px;height:64px;margin:0 auto 18px;color:var(--effindom-loader-color)}.effindom-loading-frame{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-dasharray:164;animation:effindom-frame 1.8s cubic-bezier(.65,0,.35,1) infinite}.effindom-loading-node{fill:currentColor;transform-box:fill-box;transform-origin:center;animation:effindom-node 1.8s ease-in-out infinite}.effindom-loading-node-b{animation-delay:-.9s}
+.effindom-loading-kicker{margin:0 0 8px;font:700 11px/1.2 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#7dd3fc}.effindom-loading-title{margin:0;font:600 24px/1.2 system-ui,sans-serif}.effindom-loading-detail{margin:10px 0 0;font:14px/1.5 system-ui,sans-serif;color:#cbd5e1}.effindom-loading-overlay[data-state=error] .effindom-loading-card{border-color:rgba(248,113,113,.5);background:rgba(69,10,10,.86)}.effindom-loading-overlay[data-state=error] .effindom-loading-visual{display:none}
+@keyframes effindom-frame{0%{stroke-dashoffset:164;opacity:.35}45%,65%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:-164;opacity:.35}}@keyframes effindom-node{0%,100%{transform:scale(.65);opacity:.35}50%{transform:scale(1.15);opacity:1}}@media(prefers-reduced-motion:reduce){.effindom-loading-frame,.effindom-loading-node{animation:none}.effindom-loading-frame{stroke-dashoffset:0}}
+`;
+var DEFAULT_LOADING_OVERLAY_BODY = `
+<div class="effindom-loading-card">
+  <svg class="effindom-loading-visual" data-effindom-loading-visual viewBox="0 0 88 64" aria-hidden="true">
+    <rect class="effindom-loading-frame" x="8" y="8" width="72" height="48" rx="12" />
+    <circle class="effindom-loading-node" cx="24" cy="32" r="4" />
+    <circle class="effindom-loading-node effindom-loading-node-b" cx="64" cy="32" r="4" />
+  </svg>
+  <p class="effindom-loading-kicker">EffinDOM</p>
+  <h2 class="effindom-loading-title" id="${LOADING_TITLE_ID}" data-effindom-loading-title>Loading application</h2>
+  <p class="effindom-loading-detail" id="${LOADING_DETAIL_ID}" data-effindom-loading-detail>Preparing the runtime...</p>
+</div>`;
 function packColor(red, green, blue, alpha = 255) {
   return ((red & 255) << 24 | (green & 255) << 16 | (blue & 255) << 8 | alpha & 255) >>> 0;
 }
@@ -3979,6 +3652,29 @@ function waitForFrame() {
   });
 }
 var HarnessUiChrome = class {
+  ensureLoadingOverlay() {
+    const existing = document.getElementById(LOADING_OVERLAY_ID);
+    if (existing instanceof HTMLElement) {
+      return existing;
+    }
+    if (document.getElementById("effindom-loading-overlay-default-styles") === null) {
+      const styles = document.createElement("style");
+      styles.id = "effindom-loading-overlay-default-styles";
+      styles.textContent = DEFAULT_LOADING_OVERLAY_STYLES;
+      document.head.appendChild(styles);
+    }
+    const overlay = document.createElement("div");
+    overlay.id = LOADING_OVERLAY_ID;
+    overlay.className = "effindom-loading-overlay";
+    overlay.dataset.state = "loading";
+    overlay.setAttribute("aria-live", "polite");
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.hidden = true;
+    overlay.innerHTML = DEFAULT_LOADING_OVERLAY_BODY;
+    const canvas = document.getElementById("fui-canvas");
+    (canvas?.parentElement ?? document.body).appendChild(overlay);
+    return overlay;
+  }
   getLoadingOverlayText() {
     const overlay = document.getElementById(LOADING_OVERLAY_ID);
     const titleNode = document.getElementById(LOADING_TITLE_ID);
@@ -3994,7 +3690,7 @@ var HarnessUiChrome = class {
     };
   }
   setLoadingOverlay(state, title, detail) {
-    const overlay = document.getElementById(LOADING_OVERLAY_ID);
+    const overlay = this.ensureLoadingOverlay();
     const titleNode = document.getElementById(LOADING_TITLE_ID);
     const detailNode = document.getElementById(LOADING_DETAIL_ID);
     if (!(overlay instanceof HTMLElement) || !(titleNode instanceof HTMLElement) || !(detailNode instanceof HTMLElement)) {
@@ -4005,6 +3701,12 @@ var HarnessUiChrome = class {
     overlay.setAttribute("aria-hidden", "false");
     titleNode.textContent = title;
     detailNode.textContent = detail;
+  }
+  showLoading(state, title, detail) {
+    this.setLoadingOverlay(state, title, detail);
+  }
+  hideLoading() {
+    this.hideLoadingOverlay();
   }
   hideLoadingOverlay() {
     const overlay = document.getElementById(LOADING_OVERLAY_ID);
@@ -4056,6 +3758,130 @@ var HarnessUiChrome = class {
   getCanvasSizeSource(canvas) {
     const source = canvas.closest("[data-effindom-canvas-size-source]");
     return source instanceof HTMLElement ? source : canvas;
+  }
+};
+
+// node_modules/@effindomv2/runtime/src/managed-harness/loading-controller.ts
+var DEFAULT_DELAY_MS = 300;
+var DEFAULT_MINIMUM_VISIBLE_MS = 300;
+function normalizeDuration(value, fallback) {
+  return value === void 0 || !Number.isFinite(value) ? fallback : Math.max(0, value);
+}
+function createBrowserLoadingClock() {
+  return {
+    now: () => performance.now(),
+    setTimer: (callback, delayMs) => window.setTimeout(callback, delayMs),
+    clearTimer: (timerId) => {
+      window.clearTimeout(timerId);
+    },
+    delay: (delayMs) => new Promise((resolve) => window.setTimeout(resolve, delayMs))
+  };
+}
+var HarnessLoadingController = class {
+  constructor(presenter, clock, title, detail, options = {}, initialVisibleAtMs = null) {
+    this.presenter = presenter;
+    this.clock = clock;
+    this.title = title;
+    this.detail = detail;
+    this.delayMs = normalizeDuration(options.delayMs, DEFAULT_DELAY_MS);
+    this.minimumVisibleMs = normalizeDuration(options.minimumVisibleMs, DEFAULT_MINIMUM_VISIBLE_MS);
+    this.debugDelayMs = normalizeDuration(options.debugDelayMs, 0);
+    this.visibleAtMs = initialVisibleAtMs;
+  }
+  presenter;
+  clock;
+  delayMs;
+  minimumVisibleMs;
+  debugDelayMs;
+  generation = 0;
+  active = null;
+  revealTimer = null;
+  visibleAtMs = null;
+  title;
+  detail;
+  begin(detail, startedAtMs = this.clock.now()) {
+    this.cancelRevealTimer();
+    this.generation += 1;
+    this.detail = detail;
+    const operation = {
+      generation: this.generation,
+      startedAtMs
+    };
+    this.active = operation;
+    if (this.visibleAtMs === null) {
+      const revealDelayMs = Math.max(0, this.delayMs - (this.clock.now() - startedAtMs));
+      this.revealTimer = this.clock.setTimer(() => {
+        if (!this.isCurrent(operation)) {
+          return;
+        }
+        this.revealTimer = null;
+        this.visibleAtMs = this.clock.now();
+        this.presenter.showLoading("loading", this.title, this.detail);
+      }, revealDelayMs);
+    } else {
+      this.presenter.showLoading("loading", this.title, this.detail);
+    }
+    return operation;
+  }
+  update(operation, detail) {
+    if (!this.isCurrent(operation)) {
+      return;
+    }
+    this.detail = detail;
+    if (this.visibleAtMs !== null) {
+      this.presenter.showLoading("loading", this.title, this.detail);
+    }
+  }
+  async complete(operation) {
+    if (!this.isCurrent(operation)) {
+      return;
+    }
+    const active = this.active;
+    if (active === null) {
+      return;
+    }
+    const debugRemainingMs = this.debugDelayMs - (this.clock.now() - active.startedAtMs);
+    if (debugRemainingMs > 0) {
+      await this.clock.delay(debugRemainingMs);
+    }
+    if (!this.isCurrent(operation)) {
+      return;
+    }
+    if (this.visibleAtMs === null) {
+      this.cancelRevealTimer();
+      this.active = null;
+      this.presenter.hideLoading();
+      return;
+    }
+    const visibleRemainingMs = this.minimumVisibleMs - (this.clock.now() - this.visibleAtMs);
+    if (visibleRemainingMs > 0) {
+      await this.clock.delay(visibleRemainingMs);
+    }
+    if (!this.isCurrent(operation)) {
+      return;
+    }
+    this.cancelRevealTimer();
+    this.active = null;
+    this.visibleAtMs = null;
+    this.presenter.hideLoading();
+  }
+  fail(detail) {
+    this.cancelRevealTimer();
+    this.generation += 1;
+    this.active = null;
+    this.visibleAtMs = this.clock.now();
+    this.detail = detail;
+    this.presenter.showLoading("error", this.title, detail);
+  }
+  isCurrent(operation) {
+    return this.active?.generation === operation.generation;
+  }
+  cancelRevealTimer() {
+    if (this.revealTimer === null) {
+      return;
+    }
+    this.clock.clearTimer(this.revealTimer);
+    this.revealTimer = null;
   }
 };
 
@@ -4686,6 +4512,9 @@ var BrowserManagedPlatformHost = class {
   isDarkMode() {
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   }
+  setApplicationCaption(caption) {
+    document.title = caption;
+  }
   reload() {
     window.location.reload();
   }
@@ -4746,48 +4575,80 @@ function describeHarnessError(error) {
 }
 function startManagedHarness(options) {
   applyHarnessRuntimeOptions(options);
+  const instantiateApp = options.instantiateApp ?? ((module, imports) => WebAssembly.instantiate(module, imports));
   let cleanup = () => {
     delete window.__fui_debug;
   };
+  harnessUiChrome.ensureLoadingOverlay();
+  const loadingBootstrapWindow = window;
+  const loadingBootstrap = loadingBootstrapWindow.__effindomLoadingBootstrap;
+  if (loadingBootstrap?.timerId !== null && loadingBootstrap?.timerId !== void 0) {
+    window.clearTimeout(loadingBootstrap.timerId);
+    loadingBootstrap.timerId = null;
+  }
+  const bootstrapVisibleAtMs = loadingBootstrap?.visibleAtMs ?? null;
   const loadingOverlayText = harnessUiChrome.getLoadingOverlayText();
-  const loadingOverlayTitle = loadingOverlayText.title;
-  let loadingOverlayDetail = loadingOverlayText.detail;
-  let loadingOverlayVisible = false;
-  let loadingOverlayTimer = null;
-  function clearLoadingOverlayTimer() {
-    if (loadingOverlayTimer === null) {
-      return;
-    }
-    window.clearTimeout(loadingOverlayTimer);
-    loadingOverlayTimer = null;
-  }
-  function scheduleLoadingOverlay() {
-    if (loadingOverlayVisible || loadingOverlayTimer !== null) {
-      return;
-    }
-    loadingOverlayTimer = window.setTimeout(() => {
-      loadingOverlayTimer = null;
-      loadingOverlayVisible = true;
-      harnessUiChrome.setLoadingOverlay("loading", loadingOverlayTitle, loadingOverlayDetail);
-    }, 1e3);
-  }
-  function updateLoadingOverlay(detail) {
-    loadingOverlayDetail = detail;
-    if (loadingOverlayVisible) {
-      harnessUiChrome.setLoadingOverlay("loading", loadingOverlayTitle, loadingOverlayDetail);
-      return;
-    }
-    scheduleLoadingOverlay();
-  }
-  function finishLoadingOverlay() {
-    clearLoadingOverlayTimer();
-    loadingOverlayVisible = false;
+  const runtimeWindow = window;
+  const configuredBuildMode = options.buildMode ?? runtimeWindow.__effindomRuntime?.buildMode;
+  const debugDelayParam = new URLSearchParams(window.location.search).get("effindom-loading-delay");
+  const parsedDebugDelay = debugDelayParam === null ? 0 : Number(debugDelayParam);
+  const loadingOptions = options.loading === false ? null : {
+    ...options.loading,
+    debugDelayMs: configuredBuildMode === "debug" && Number.isFinite(parsedDebugDelay) ? Math.max(options.loading?.debugDelayMs ?? 0, parsedDebugDelay) : 0
+  };
+  const loadingController = loadingOptions === null ? null : new HarnessLoadingController(
+    harnessUiChrome,
+    createBrowserLoadingClock(),
+    loadingOverlayText.title,
+    loadingOverlayText.detail,
+    loadingOptions,
+    bootstrapVisibleAtMs
+  );
+  if (loadingController === null) {
     harnessUiChrome.hideLoadingOverlay();
   }
+  let startupLoadingOperation = loadingController?.begin(
+    loadingBootstrap?.detail ?? "Runtime assets",
+    0
+  ) ?? null;
+  let activeAppLoadingOperation = null;
+  window.addEventListener("effindom-loading-progress", (event) => {
+    const operation = activeAppLoadingOperation;
+    if (operation === null || loadingController === null || !(event instanceof CustomEvent)) {
+      return;
+    }
+    const progress = event.detail;
+    if (typeof progress.label !== "string" || typeof progress.completed !== "number" || typeof progress.total !== "number") {
+      return;
+    }
+    loadingController.update(
+      operation,
+      `${progress.label} ${String(progress.completed)} / ${String(progress.total)}`
+    );
+  });
+  function beginAppLoading(show, detail) {
+    if (!show || loadingController === null) {
+      if (startupLoadingOperation !== null) {
+        void loadingController?.complete(startupLoadingOperation);
+        startupLoadingOperation = null;
+      }
+      activeAppLoadingOperation = null;
+      return null;
+    }
+    if (startupLoadingOperation !== null) {
+      const operation2 = startupLoadingOperation;
+      startupLoadingOperation = null;
+      loadingController.update(operation2, detail);
+      activeAppLoadingOperation = operation2;
+      return operation2;
+    }
+    const operation = loadingController.begin(detail);
+    activeAppLoadingOperation = operation;
+    return operation;
+  }
   function failLoadingOverlay(detail) {
-    clearLoadingOverlayTimer();
-    loadingOverlayVisible = true;
-    harnessUiChrome.setLoadingOverlay("error", loadingOverlayTitle, detail);
+    activeAppLoadingOperation = null;
+    loadingController?.fail(detail);
   }
   const bridge = window.EffinDomBrowserBridge;
   if (bridge === void 0) {
@@ -6088,10 +5949,12 @@ function startManagedHarness(options) {
       return runtime;
     }
     async function loadApp(loadOptions) {
-      if (loadOptions.showLoadingOverlay !== false) {
-        updateLoadingOverlay(`Loading ${loadOptions.wasmPath}`);
+      const loadingOperation = beginAppLoading(loadOptions.showLoadingOverlay !== false, `Loading ${loadOptions.wasmPath}`);
+      if (loadOptions.recreateRuntimeBeforeLoad === true) {
+        await recreateRuntime();
+      } else {
+        await unloadApp();
       }
-      await unloadApp();
       const restoredSnapshot = await queuePersistedUiStateWork(() => {
         switch (loadOptions.persistedRestoreMode ?? "initial") {
           case "none":
@@ -6106,7 +5969,10 @@ function startManagedHarness(options) {
       hydrateCurrentPersistedEntries(restoredSnapshot);
       const wasmModule = await loadWasmModule(loadOptions.wasmPath);
       validateAppImports(wasmModule, loadOptions.hostServices);
-      const instance = await instantiate(wasmModule, createAppImports(loadOptions.hostServices));
+      const instance = await (loadOptions.instantiateApp ?? instantiateApp)(
+        wasmModule,
+        createAppImports(loadOptions.hostServices)
+      );
       const exports = instance.exports;
       const keyBufferPtr = exports.__fui_key_buffer();
       const textBufferPtr = exports.__fui_text_buffer();
@@ -6162,14 +6028,19 @@ function startManagedHarness(options) {
         waitForFrame
       };
       await loadOptions.onReady?.(context);
-      runtime.clearPointerHover();
-      runtime.refreshPointerHover();
       runtime.flushPendingCommit();
       await waitForFrame();
       await queuePersistedUiStateWork(() => ensureCurrentHistoryEntrySnapshot(`loading ${loadOptions.wasmPath}`));
       lastHandledUrlHref = window.location.href;
       updateState();
-      finishLoadingOverlay();
+      if (loadingOperation !== null) {
+        if (activeAppLoadingOperation === loadingOperation) {
+          activeAppLoadingOperation = null;
+        }
+        await loadingController?.complete(loadingOperation);
+      }
+      runtime.clearPointerHover();
+      runtime.refreshPointerHover();
       return context;
     }
     const controller = {
@@ -6275,13 +6146,11 @@ function startRoutedHarness(config) {
     }
     config.onRouteLoading?.(route);
     const isWarmRouteSwap = activeRoute !== null;
-    if (isWarmRouteSwap && config.recreateRuntimeOnWarmRouteSwap === true) {
-      await controller.recreateRuntime();
-    }
     const persistedRestoreMode = activeRoute === null ? "initial" : mode === "pop" ? "pop" : "none";
     const appOptionsBase = {
       wasmPath: route.wasmPath,
       persistedRestoreMode,
+      recreateRuntimeBeforeLoad: isWarmRouteSwap && config.recreateRuntimeOnWarmRouteSwap === true,
       run(exports) {
         config.run(exports, route);
       },
@@ -6299,7 +6168,7 @@ function startRoutedHarness(config) {
       ...config.workerHostServices === void 0 ? {} : { workerHostServices: config.workerHostServices }
     };
     const showLoadingOverlay = config.showLoadingOverlay?.(isWarmRouteSwap, route);
-    appOptions.showLoadingOverlay = showLoadingOverlay ?? !isWarmRouteSwap;
+    appOptions.showLoadingOverlay = showLoadingOverlay ?? true;
     await controller.loadApp(appOptions);
     routeLoads[route.routePath] = (routeLoads[route.routePath] ?? 0) + 1;
     activeRoute = route;
@@ -6309,6 +6178,8 @@ function startRoutedHarness(config) {
     ...config.buildMode === void 0 ? {} : { buildMode: config.buildMode },
     ...config.devToolsDomMirror === void 0 ? {} : { devToolsDomMirror: config.devToolsDomMirror },
     ...config.pageZoom === void 0 ? {} : { pageZoom: config.pageZoom },
+    ...config.loading === void 0 ? {} : { loading: config.loading },
+    ...config.instantiateApp === void 0 ? {} : { instantiateApp: config.instantiateApp },
     onReady: async (controller) => {
       controller.setSameOriginNavigationHandler((target, mode) => {
         navigationQueue = navigationQueue.then(() => navigateToRoute(controller, target, mode));

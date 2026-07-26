@@ -30,12 +30,12 @@
     "publish:stage": "tsx scripts/stage-publish.ts"
   },
   "dependencies": {
-    "@effindomv2/fui-rs": "0.1.24",
-    "@effindomv2/runtime": "0.1.26"
+    "@effindomv2/fui-rs": "0.2.1",
+    "@effindomv2/runtime": "0.2.2"
   },
   "devDependencies": {
     "chokidar-cli": "^3.0.0",
-    "concurrently": "^10.0.3",
+    "concurrently": "9.2.4",
     "esbuild": "0.28.1",
     "playwright": "1.59.1",
     "serve": "^14.2.5",

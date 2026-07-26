@@ -8,6 +8,16 @@ async function clickCanvasNode(page: Page, locator: Locator, description: string
   await page.mouse.click(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
 }
 
+async function waitForRouteReady(page: Page): Promise<void> {
+  await page.waitForFunction(() => {
+    const overlay = document.getElementById('effindom-loading-overlay');
+    const bootstrap = (window as Window & {
+      __effindomLoadingBootstrap?: { timerId: number | null };
+    }).__effindomLoadingBootstrap;
+    return overlay instanceof HTMLElement && overlay.hidden && bootstrap?.timerId === null;
+  });
+}
+
 async function waitForTextChange(locator: Locator, previous: string | null): Promise<string> {
   for (let attempt = 0; attempt < 40; attempt += 1) {
     const current = await locator.textContent();
@@ -68,6 +78,7 @@ try {
     const pageErrors: string[] = [];
     page.on('pageerror', (error) => pageErrors.push(error.message));
     await page.goto('http://127.0.0.1:4179/', { waitUntil: 'networkidle' });
+    await waitForRouteReady(page);
     await page
       .locator('[data-semantic-text-content="true"]')
       .getByText('Basic controls showcase', { exact: true })
@@ -119,6 +130,7 @@ try {
     pageErrors.length = 0;
     await page.setViewportSize({ width: 1280, height: 4000 });
     await page.goto('http://127.0.0.1:4179/text-fonts/', { waitUntil: 'networkidle' });
+    await waitForRouteReady(page);
     await page
       .locator('[data-semantic-text-content="true"]')
       .getByText('Text Inputs', { exact: true })
@@ -151,6 +163,7 @@ try {
     pageErrors.length = 0;
     await page.setViewportSize({ width: 1280, height: 6000 });
     await page.goto('http://127.0.0.1:4179/advanced/', { waitUntil: 'networkidle' });
+    await waitForRouteReady(page);
     await page
       .locator('[data-semantic-text-content="true"]')
       .getByText('Advanced', { exact: true })
@@ -158,13 +171,10 @@ try {
       .waitFor();
     const startWorker = page.getByRole('button', { name: 'Start prime worker', exact: true });
     await startWorker.waitFor();
-    const startWorkerBounds = await startWorker.boundingBox();
-    if (startWorkerBounds === null) {
-      throw new Error('Advanced worker start control is not visible.');
-    }
-    await page.mouse.click(
-      startWorkerBounds.x + startWorkerBounds.width / 2,
-      startWorkerBounds.y + startWorkerBounds.height / 2,
+    await clickCanvasNode(
+      page,
+      startWorker,
+      'Advanced worker start control',
     );
     await page
       .locator('[data-semantic-text-content="true"]')
@@ -224,6 +234,7 @@ try {
     pageErrors.length = 0;
     await page.setViewportSize({ width: 1280, height: 3000 });
     await page.goto('http://127.0.0.1:4179/immediate-drawing/', { waitUntil: 'networkidle' });
+    await waitForRouteReady(page);
     if (await page.locator('form[data-effindom-projected-form="true"]').count() !== 0) {
       throw new Error('Text & Fonts projected form survived route teardown.');
     }
@@ -265,6 +276,7 @@ try {
     }
     pageErrors.length = 0;
     await page.goto('http://127.0.0.1:4179/advanced/', { waitUntil: 'networkidle' });
+    await waitForRouteReady(page);
     await page
       .locator('[data-semantic-text-content="true"]')
       .getByText('Advanced', { exact: true })
