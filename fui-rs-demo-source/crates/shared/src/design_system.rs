@@ -26,6 +26,32 @@ pub enum DemoButtonTone {
     Secondary,
 }
 
+fn demo_button_colors(tone: DemoButtonTone, theme: &Theme) -> ButtonColors {
+    if tone == DemoButtonTone::Primary {
+        return ButtonColors::new()
+            .background(theme.colors.accent)
+            .background_hover(theme.colors.accent_hovered)
+            .background_pressed(theme.colors.accent_pressed)
+            .text_primary(theme.colors.text_on_accent)
+            .border(theme.colors.accent);
+    }
+
+    ButtonColors::new()
+        .background(theme.colors.surface)
+        .background_hover(fui::color::mix_color(
+            theme.colors.surface,
+            theme.colors.accent,
+            0.18,
+        ))
+        .background_pressed(fui::color::mix_color(
+            theme.colors.surface,
+            theme.colors.accent,
+            0.30,
+        ))
+        .text_primary(theme.colors.text_primary)
+        .border(theme.colors.border)
+}
+
 pub fn demo_text(value: impl Into<String>, style: DemoTextStyle) -> TextNode {
     let (font_size, font_weight, muted) = match style {
         DemoTextStyle::Heading1 => (26.0, FontWeight::Bold, false),
@@ -48,28 +74,20 @@ pub fn demo_text(value: impl Into<String>, style: DemoTextStyle) -> TextNode {
 }
 
 pub fn demo_button(label: impl Into<String>, tone: DemoButtonTone) -> Button {
-    ui! {
-        button(label)
-            .corner_radius(12.0)
-            .padding(18.0, 10.0, 18.0, 10.0)
-            .font_size(15.0)
-            .width(0.0, Unit::Auto)
-            .bind_theme(move |control, theme| {
-                if tone == DemoButtonTone::Primary {
-                    control.colors(
-                        ButtonColors::new()
-                            .background(theme.colors.accent)
-                            .text_primary(theme.colors.text_on_accent),
-                    );
-                } else {
-                    control.colors(
-                        ButtonColors::new()
-                            .background(theme.colors.surface)
-                            .text_primary(theme.colors.text_primary),
-                    );
-                }
-            })
-    }
+    let control = button(label);
+    apply_demo_button_style(&control, tone);
+    control
+}
+
+pub fn apply_demo_button_style(control: &Button, tone: DemoButtonTone) -> &Button {
+    control
+        .corner_radius(12.0)
+        .padding(18.0, 10.0, 18.0, 10.0)
+        .font_size(15.0)
+        .width(0.0, Unit::Auto)
+        .bind_theme(move |control, theme| {
+            control.colors(demo_button_colors(tone, &theme));
+        })
 }
 
 pub fn section_panel(title: impl Into<String>) -> FlexBox {
@@ -172,23 +190,48 @@ pub fn apply_row_background(row: &FlexBox, index: i32, theme: &Theme) {
 }
 
 fn nav_pill(href: &str, label: &str, active: bool) -> NavLink {
-    let pill = NavLink::with_label(href, label);
-    pill.text(label)
+    let label_node = text(label);
+    label_node.font_size(14.0).selectable(false);
+    let pill = NavLink::new(href);
+    pill.child(&label_node)
+        .semantic_label(label)
         .corner_radius(999.0)
         .padding(16.0, 8.0, 16.0, 8.0);
+    pill.bind_interaction_state({
+        let label_node = label_node.clone();
+        move |state, theme| {
+            label_node.text_color(if active {
+                theme.colors.text_on_accent
+            } else if state.hovered || state.pressed {
+                theme.colors.accent_hovered
+            } else {
+                theme.colors.text_muted
+            });
+        }
+    });
     pill.bind_theme(move |link, theme| {
         link.bg_color(if active {
             theme.colors.accent
         } else {
             theme.colors.surface
-        })
-        .text_color(if active {
-            theme.colors.text_on_accent
-        } else {
-            theme.colors.text_muted
         });
     });
     pill
+}
+
+pub fn demo_nav_link(href: &str, label: &str) -> NavLink {
+    let label_node = text(label);
+    label_node.font_size(14.0).selectable(false);
+    let link = NavLink::new(href);
+    link.child(&label_node).semantic_label(label);
+    link.bind_interaction_state(move |state, theme| {
+        label_node.text_color(if state.hovered || state.pressed {
+            theme.colors.accent_hovered
+        } else {
+            theme.colors.accent
+        });
+    });
+    link
 }
 
 pub fn create_nav_bar(title: &str, active_slug: &str) -> FlexBox {
@@ -209,6 +252,24 @@ pub fn create_nav_bar(title: &str, active_slug: &str) -> FlexBox {
                     horizontal_spacer(10.0),
                     nav_pill("/immediate-drawing/", "Immediate Drawing", active_slug == "immediate-drawing"),
             },
+        }
+    }
+}
+
+pub fn create_route_chrome(title: &str, active_slug: &str, bottom_gap: f32) -> FlexBox {
+    #[cfg(feature = "native-runtime")]
+    {
+        let _ = (title, active_slug, bottom_gap);
+        row().height(0.0, Unit::Pixel).clone()
+    }
+
+    #[cfg(not(feature = "native-runtime"))]
+    {
+        ui! {
+            column().fill_width() {
+                create_nav_bar(title, active_slug),
+                vertical_spacer(bottom_gap),
+            }
         }
     }
 }

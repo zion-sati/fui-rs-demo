@@ -1,0 +1,128 @@
+name: FUI-RS native preview CI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    name: native preview / ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos-arm64
+            os: macos-14
+            architecture: arm64
+            target: aarch64-apple-darwin
+            archive: fui-rs-demo-macos-arm64.zip
+          - name: macos-x64
+            os: macos-15-intel
+            architecture: x64
+            target: x86_64-apple-darwin
+            archive: fui-rs-demo-macos-x64.zip
+          - name: windows-arm64
+            os: windows-11-arm
+            architecture: arm64
+            target: aarch64-pc-windows-msvc
+            archive: fui-rs-demo-windows-arm64.zip
+          - name: windows-x64
+            os: windows-2022
+            architecture: x64
+            target: x86_64-pc-windows-msvc
+            archive: fui-rs-demo-windows-x64.zip
+          - name: linux-arm64
+            os: ubuntu-24.04-arm
+            architecture: arm64
+            target: aarch64-unknown-linux-gnu
+            archive: fui-rs-demo-linux-arm64.tar.gz
+          - name: linux-x64
+            os: ubuntu-24.04
+            architecture: x64
+            target: x86_64-unknown-linux-gnu
+            archive: fui-rs-demo-linux-x64.tar.gz
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: runner.os == 'Windows'
+        with:
+          arch: ${{ matrix.architecture }}
+      - name: Install Linux native prerequisites
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libdbus-1-dev \
+            libfontconfig1-dev \
+            libvulkan-dev \
+            libx11-dev \
+            libxext-dev \
+            mesa-vulkan-drivers
+      - name: Install cargo-fui
+        run: cargo install --locked cargo-fui --version 0.1.10
+      - name: Install browser build dependencies
+        working-directory: fui-rs-demo-source
+        run: npm ci --ignore-scripts
+      - name: Build universal release demo
+        working-directory: fui-rs-demo-source
+        run: cargo fui build --release
+      - name: Create macOS preview archive
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/native-preview"
+          mkdir -p "$output"
+          bundle="fui-rs-demo-source/target/fui/${{ matrix.target }}/release/bundle"
+          app="$(find "$bundle" -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$app"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$output/${{ matrix.archive }}"
+          (cd "$output" && shasum -a 256 "${{ matrix.archive }}" > "${{ matrix.archive }}.sha256")
+      - name: Create Linux preview archive
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/native-preview"
+          mkdir -p "$output"
+          bundle="fui-rs-demo-source/target/fui/${{ matrix.target }}/release/bundle"
+          test -d "$bundle"
+          tar -C "$bundle" -czf "$output/${{ matrix.archive }}" .
+          (cd "$output" && sha256sum "${{ matrix.archive }}" > "${{ matrix.archive }}.sha256")
+      - name: Create Windows preview archive
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $output = Join-Path $env:RUNNER_TEMP 'native-preview'
+          New-Item -ItemType Directory -Force -Path $output | Out-Null
+          $bundle = Join-Path $PWD 'fui-rs-demo-source\target\fui\${{ matrix.target }}\release\bundle'
+          if (-not (Test-Path $bundle)) { throw "Native bundle does not exist: $bundle" }
+          $archive = Join-Path $output '${{ matrix.archive }}'
+          Compress-Archive -Path (Join-Path $bundle '*') -DestinationPath $archive -CompressionLevel Optimal
+          $hash = (Get-FileHash -Algorithm SHA256 $archive).Hash.ToLowerInvariant()
+          "$hash  ${{ matrix.archive }}" | Out-File -FilePath "$archive.sha256" -Encoding ascii
+      - name: Attest native preview provenance
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: ${{ runner.temp }}/native-preview/${{ matrix.archive }}
+      - name: Upload native preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ runner.temp }}/native-preview/*
+          if-no-files-found: error
+          retention-days: 90

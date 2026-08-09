@@ -24,7 +24,7 @@ pub(crate) fn create_worker_section() -> FlexBox {
             progress.value(0.0);
             status.text("Worker: computing primes...");
             detail.text("");
-            let worker = Worker::new("../advanced-workers.wasm", "advancedPrimeWorker")
+            let worker = Worker::new("./workers.wasm", "advancedPrimeWorker")
                 .on_progress({
                     let detail = detail.clone();
                     let progress = progress.clone();

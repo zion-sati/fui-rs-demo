@@ -81,8 +81,7 @@ impl TextFontsState {
                 .min_width(800.0, Unit::Pixel)
                 .min_height(600.0, Unit::Pixel)
                 .padding(24.0, 24.0, 24.0, 24.0) {
-                    create_nav_bar("Text & Fonts - FUI-RS Demo 🫶", "text-fonts"),
-                    vertical_spacer(PAGE_SECTION_GAP_PX),
+                    create_route_chrome("Text & Fonts - FUI-RS Demo 🫶", "text-fonts", PAGE_SECTION_GAP_PX),
                     main_panel,
             }
         };

@@ -32,7 +32,7 @@ pub(super) fn worker_result_hash_label(worker_result: &Option<String>) -> String
     }
 }
 
-pub(super) fn resolve_copy_file_name(file: &BrowserFile) -> String {
+pub(super) fn resolve_copy_file_name(file: &DemoPickedFile) -> String {
     let name = file.name();
     if let Some((base, ext)) = name.rsplit_once('.') {
         if !base.is_empty() && !ext.is_empty() {

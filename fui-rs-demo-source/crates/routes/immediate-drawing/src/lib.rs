@@ -1,22 +1,21 @@
-mod generated;
 mod widgets;
 
 use fui::prelude::*;
 use fui_rs_demo_shared::design_system::{
-    create_nav_bar, demo_scroll_box, demo_text, panel, vertical_spacer, DemoTextStyle,
+    create_route_chrome, demo_scroll_box, demo_text, panel, vertical_spacer, DemoTextStyle,
     HEADING_TO_BODY_GAP_PX, PAGE_SECTION_GAP_PX, TITLE_TO_SUPPORTING_GAP_PX,
 };
 use widgets::DrawingGallery;
 
 #[derive(Clone)]
-struct ImmediateDrawingPage {
+pub struct ImmediateDrawingPage {
     root: SelectionArea,
 }
 
 fui_component!(ImmediateDrawingPage => root);
 
 impl ImmediateDrawingPage {
-    fn new() -> Self {
+    pub fn new() -> Self {
         use_system_theme();
         let gallery = DrawingGallery::new();
         let gallery_panel = ui! {
@@ -51,8 +50,7 @@ impl ImmediateDrawingPage {
                 .min_height(600.0, Unit::Pixel)
                 .fill_size()
                 .padding(24.0, 24.0, 24.0, 24.0) {
-                    create_nav_bar("Immediate Drawing - FUI-RS Demo", "immediate-drawing"),
-                    vertical_spacer(PAGE_SECTION_GAP_PX),
+                    create_route_chrome("Immediate Drawing - FUI-RS Demo", "immediate-drawing", PAGE_SECTION_GAP_PX),
                     main_panel,
                 }
         };
@@ -64,6 +62,8 @@ impl ImmediateDrawingPage {
         });
         Self { root }
     }
-}
 
-fui_app!(ImmediateDrawingPage, ImmediateDrawingPage::new);
+    pub fn root(&self) -> SelectionArea {
+        self.root.clone()
+    }
+}
