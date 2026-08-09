@@ -73,7 +73,8 @@ jobs:
             libxext-dev \
             mesa-vulkan-drivers
       - name: Install cargo-fui
-        run: cargo install --locked cargo-fui --version 0.1.10
+        working-directory: fui-rs-demo-source
+        run: node scripts/install-cargo-fui.mjs
       - name: Install browser build dependencies
         working-directory: fui-rs-demo-source
         run: npm ci --ignore-scripts

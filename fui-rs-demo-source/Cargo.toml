@@ -5,6 +5,9 @@ resolver = "2"
 [workspace.dependencies]
 fui-rs = "=0.2.16"
 
+[workspace.metadata.fui]
+cargo-fui-version = "0.1.11"
+
 [profile.dev]
 debug = 0
 panic = "abort"
