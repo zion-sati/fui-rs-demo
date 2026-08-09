@@ -10,7 +10,6 @@ struct PaintState {
     hint_label: Option<RichText>,
     hint_baked: bool,
     painting: bool,
-    retry_invalidator: Option<DrawableInvalidator>,
 }
 
 pub(super) struct PaintCanvas {
@@ -30,7 +29,6 @@ impl PaintCanvas {
             hint_label: None,
             hint_baked: false,
             painting: false,
-            retry_invalidator: None,
         }));
         let node = surface({
             let state = state.clone();
@@ -39,7 +37,6 @@ impl PaintCanvas {
         node.node_id("widget-paint")
             .semantic_role(SemanticRole::Image)
             .semantic_label("Paint canvas - drag to draw");
-        state.borrow_mut().retry_invalidator = Some(node.invalidator());
         node.on_pointer_down({
             let state = state.clone();
             let invalidator = node.invalidator();
@@ -97,8 +94,7 @@ impl PaintCanvas {
             .height(268.0, Unit::Pixel);
         let weak_state = Rc::downgrade(&state);
         let invalidator = node.invalidator();
-        let hint_bitmap = state.borrow().bitmap.clone();
-        hint_bitmap.on_text_ready(&hint, {
+        state.borrow().bitmap.on_text_ready(&hint, {
             let hint = hint.clone();
             move |_| {
                 let Some(state) = weak_state.upgrade() else {
@@ -153,12 +149,9 @@ fn draw_paint_canvas(ctx: &mut DrawContext, state: &mut PaintState) {
     ctx.draw_image(state.bitmap.texture_id(), 0.0, 0.0, size, size);
     if !state.hint_baked {
         if let Some(hint) = state.hint_label.as_ref() {
-            if state.bitmap.render(hint, 16.0, 32.0, state.bitmap_scale) {
-                state.bitmap.commit();
-                state.hint_baked = true;
-            } else if let Some(invalidator) = state.retry_invalidator.as_ref() {
-                invalidator.mark_dirty();
-            }
+            state.bitmap.render(hint, 16.0, 32.0, state.bitmap_scale);
+            state.bitmap.commit();
+            state.hint_baked = true;
         }
     }
     let hint = rgba(0x96, 0x96, 0xaa, 0x78);

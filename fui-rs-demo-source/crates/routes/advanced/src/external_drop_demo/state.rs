@@ -22,8 +22,8 @@ pub(super) struct ExternalDropDemoState {
     last_items: RefCell<Vec<ExternalDropItemInfo>>,
     hovering_accepted: Cell<bool>,
     ignore_next_leave: Cell<bool>,
-    pub(super) dropped_file: RefCell<Option<DemoPickedFile>>,
-    pub(super) active_copy_request: RefCell<Option<DemoFileCopyRequest>>,
+    pub(super) dropped_file: RefCell<Option<BrowserFile>>,
+    pub(super) active_copy_request: RefCell<Option<FileWorkerProcessRequest>>,
 }
 
 impl ExternalDropDemoState {
@@ -58,7 +58,7 @@ impl ExternalDropDemoState {
     pub(super) fn can_copy_dropped_file(&self) -> bool {
         self.dropped_file.borrow().is_some()
             && self.active_copy_request.borrow().is_none()
-            && DemoFile::capabilities().can_process_in_worker_to_picked_file
+            && File::capabilities().can_process_in_worker_to_picked_file
     }
 
     pub(super) fn sync_status(&self, label: impl Into<String>) {
@@ -86,7 +86,7 @@ impl ExternalDropDemoState {
     }
 
     pub(super) fn sync_capabilities(&self) {
-        let capabilities = DemoFile::capabilities();
+        let capabilities = File::capabilities();
         let label = format!(
             "File capabilities: open={} • chunk-read={} • save={} • native-save-picker={} • worker-process-save={}",
             if capabilities.can_pick_open { "yes" } else { "no" },
@@ -159,26 +159,17 @@ impl ExternalDropDemoState {
     pub(super) fn handle_external_drag(&self, args: ExternalDropEventArgs) -> DropProposal {
         self.ignore_next_leave.replace(false);
         self.replace_items(args.items.clone());
-        if !args.items.is_empty()
-            && !args
-                .items
-                .iter()
-                .any(|item| item.kind == ExternalDropItemKind::File)
-        {
+        if args.items.is_empty() {
             self.hovering_accepted.replace(false);
             self.sync_status("External drop status: ignoring non-file drag");
             self.apply_theme(&current_theme());
             return DropProposal::none();
         }
         self.hovering_accepted.replace(true);
-        self.sync_status(if args.items.is_empty() {
-            "External drop status: hovering external file • metadata available on drop".to_string()
-        } else {
-            format!(
-                "External drop status: hovering {} • effect Copy",
-                format_item_count(args.items.len())
-            )
-        });
+        self.sync_status(format!(
+            "External drop status: hovering {} • effect Copy",
+            format_item_count(args.items.len())
+        ));
         self.apply_theme(&current_theme());
         DropProposal::new(DragDropEffects::Copy, false)
     }
@@ -201,11 +192,8 @@ impl ExternalDropDemoState {
         self.hovering_accepted.replace(false);
         self.ignore_next_leave.replace(true);
         self.replace_items(args.items.clone());
-        self.dropped_file.replace(
-            args.items
-                .iter()
-                .find_map(DemoFile::from_external_drop_item),
-        );
+        self.dropped_file
+            .replace(args.items.iter().find_map(|item| item.file.clone()));
         self.sync_status(format!(
             "External drop status: dropped {} • effect Copy",
             format_item_count(args.items.len())

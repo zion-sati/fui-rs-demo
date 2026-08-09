@@ -12,11 +12,11 @@ pub struct CustomFontSection {
 
 impl CustomFontSection {
     pub fn new() -> Self {
-        let emoji_face = FontFace::load("/fonts/NotoColorEmoji.ttf");
+        let emoji_face = FontFace::load("/runtime/fonts/NotoColorEmoji.ttf");
         let body_stack =
-            FontStack::load("/fonts/DejaVuSans.ttf").fallback_face(emoji_face.clone());
+            FontStack::load("/runtime/fonts/DejaVuSans.ttf").fallback_face(emoji_face.clone());
         let heading_stack =
-            FontStack::load("/fonts/DejaVuSans-Bold.ttf").fallback_face(emoji_face.clone());
+            FontStack::load("/runtime/fonts/DejaVuSans-Bold.ttf").fallback_face(emoji_face.clone());
         let family = FontFamily::regular_bold_stacks(body_stack.clone(), heading_stack);
         let heading_text = demo_text("Custom DejaVu FontStack sample 🌍", DemoTextStyle::Heading2);
         heading_text.font_family(family.clone());

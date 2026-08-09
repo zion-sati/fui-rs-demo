@@ -8,12 +8,3 @@ name = "fui_rs_demo_shared"
 
 [dependencies]
 fui-rs = { workspace = true }
-
-[target.'cfg(all(not(target_family = "wasm"), not(target_os = "windows")))'.dependencies]
-ureq = { version = "2.12", default-features = false, features = ["tls"], optional = true }
-
-[target.'cfg(target_os = "windows")'.dependencies]
-ureq = { version = "2.12", default-features = false, features = ["native-tls"], optional = true }
-
-[features]
-native-runtime = ["fui-rs/native-runtime", "dep:ureq"]

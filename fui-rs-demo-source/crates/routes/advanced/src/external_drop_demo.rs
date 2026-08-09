@@ -2,7 +2,6 @@ use fui::prelude::*;
 use fui_rs_demo_shared::design_system::{
     demo_button, demo_text, section_panel, vertical_spacer, DemoButtonTone, DemoTextStyle,
 };
-use fui_rs_demo_shared::demo_file::{DemoFile, DemoFileCopyRequest, DemoPickedFile};
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
@@ -42,6 +41,7 @@ impl ExternalDropDemoPanel {
             .padding(18.0, 18.0, 18.0, 18.0)
             .corner_radius(20.0)
             .allow_external_drop(true)
+            .semantic_role(SemanticRole::Form)
             .semantic_label("External file drop target")
             .child(&ui! {
                 column()
