@@ -1,8 +1,28 @@
 {
   "routes": [
-    { "key": "home", "routePath": "/", "wasmPath": "/app.wasm", "title": "Home" },
-    { "key": "text-fonts", "routePath": "/text-fonts/", "wasmPath": "/app.wasm", "title": "Text & Fonts" },
-    { "key": "advanced", "routePath": "/advanced/", "wasmPath": "/app.wasm", "title": "Advanced" },
-    { "key": "immediate-drawing", "routePath": "/immediate-drawing/", "wasmPath": "/app.wasm", "title": "Immediate Drawing" }
+    {
+      "key": "home",
+      "routePath": "/",
+      "wasmPath": "/home.wasm",
+      "title": "Home"
+    },
+    {
+      "key": "text-fonts",
+      "routePath": "/text-fonts/",
+      "wasmPath": "/text-fonts.wasm",
+      "title": "Text & Fonts"
+    },
+    {
+      "key": "advanced",
+      "routePath": "/advanced/",
+      "wasmPath": "/advanced.wasm",
+      "title": "Advanced"
+    },
+    {
+      "key": "immediate-drawing",
+      "routePath": "/immediate-drawing/",
+      "wasmPath": "/immediate-drawing.wasm",
+      "title": "Immediate Drawing"
+    }
   ]
 }

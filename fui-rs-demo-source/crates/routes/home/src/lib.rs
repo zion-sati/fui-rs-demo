@@ -1,11 +1,11 @@
 mod bitmap;
 mod controls_images;
+mod generated;
 mod nested_scroll;
 mod page;
 mod virtual_list;
 
 use fui::prelude::*;
-use fui_rs_demo_shared::app_services::{AppClock, AppClockSubscription};
 use fui_rs_demo_shared::design_system::*;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -15,18 +15,12 @@ const VIRTUAL_LIST_ITEM_HEIGHT: f32 = 62.0;
 const DEMO_BITMAP_SIZE: u32 = 512;
 
 #[derive(Clone)]
-pub struct HomePage {
+struct HomePage {
     root: SelectionArea,
     _state: Rc<HomeState>,
 }
 
 fui_component!(HomePage => root);
-
-impl HomePage {
-    pub fn root(&self) -> SelectionArea {
-        self.root.clone()
-    }
-}
 
 struct HomeState {
     root: SelectionArea,
@@ -53,7 +47,8 @@ struct HomeState {
     foundations_action_count: Cell<i32>,
     foundations_key_target_focused: Cell<bool>,
     foundations_last_key: RefCell<String>,
-    clock_subscription: RefCell<Option<AppClockSubscription>>,
+    start_tick: Cell<i32>,
+    host_event_subscriptions: RefCell<Vec<HostEventSubscription>>,
     _bitmap: Bitmap,
 }
 
@@ -95,7 +90,11 @@ impl HomeState {
             .show();
     }
 
-    fn set_elapsed_seconds(&self, elapsed: u64) {
+    fn set_elapsed_seconds(&self, tick: i32) {
+        if self.start_tick.get() < 0 {
+            self.start_tick.set(tick);
+        }
+        let elapsed = (tick - self.start_tick.get()).max(0);
         self.elapsed_text.text(format!(
             "Time since app started: {:02}:{:02}:{:02}",
             elapsed / 3600,
@@ -171,8 +170,9 @@ impl HomeState {
     }
 }
 
-
 use bitmap::*;
 use controls_images::*;
 use nested_scroll::*;
 use virtual_list::*;
+
+fui_app!(HomePage, HomePage::new);

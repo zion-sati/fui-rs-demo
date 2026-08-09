@@ -144,6 +144,39 @@ impl ReorderDemoPanel {
                 let grip_label = ui! {
                 demo_text("☰", DemoTextStyle::BodySecondary).selectable(false).cursor(CursorStyle::Grab)
                 };
+                grip_label
+                    .drag_data({
+                        let weak = weak.clone();
+                        let pending_drag_item_id = pending_drag_item_id.clone();
+                        move || {
+                            let state = weak.upgrade()?;
+                            let item_id = {
+                                let state_ref = state.borrow();
+                                let item_id = state_ref
+                                    .items
+                                    .borrow()
+                                    .get(index)
+                                    .map(|item| String::from(item.id))?;
+                                item_id
+                            };
+                            pending_drag_item_id.borrow_mut().replace(item_id);
+                            let drag_data = state.borrow().begin_drag(index as i32);
+                            drag_data
+                        }
+                    })
+                    .drag_allowed_effects(DragDropEffects::Move)
+                    .on_drag_completed({
+                        let weak = weak.clone();
+                        let pending_drag_item_id = pending_drag_item_id.clone();
+                        move |event| {
+                            if let (Some(state), Some(item_id)) =
+                                (weak.upgrade(), pending_drag_item_id.borrow_mut().take())
+                            {
+                                state.borrow().complete_drag(&item_id, event.effect);
+                            }
+                        }
+                    });
+
                 let grip = ui! {
                     flex_box().width(36.0, Unit::Pixel)
                     .height(40.0, Unit::Pixel)
@@ -151,6 +184,8 @@ impl ReorderDemoPanel {
                     .justify_content(JustifyContent::Center)
                     .align_items(AlignItems::Center)
                     .cursor(CursorStyle::Grab)
+                    .semantic_role(SemanticRole::Button)
+                    .semantic_label("Drag grip")
                     .drag_data({
                         let weak = weak.clone();
                         let pending_drag_item_id = pending_drag_item_id.clone();

@@ -1,0 +1,10 @@
+{
+  "workers": [
+    {
+      "key": "advanced-workers",
+      "packageName": "fui-rs-demo-advanced-worker",
+      "crateName": "advanced_workers",
+      "wasmFile": "advanced-workers.wasm"
+    }
+  ]
+}

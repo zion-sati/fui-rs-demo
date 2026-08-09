@@ -1,6 +1,7 @@
 mod animation_section;
 mod external_drop_demo;
 mod fetch_section;
+mod generated;
 mod reorder_demo;
 mod worker_section;
 
@@ -9,21 +10,21 @@ use external_drop_demo::ExternalDropDemoPanel;
 use fetch_section::create_fetch_section;
 use fui::prelude::*;
 use fui_rs_demo_shared::design_system::{
-    create_route_chrome, demo_scroll_box, demo_text as styled_text, panel, vertical_spacer,
+    create_nav_bar, demo_scroll_box, demo_text as styled_text, panel, vertical_spacer,
     DemoTextStyle, PAGE_SECTION_GAP_PX,
 };
 use reorder_demo::ReorderDemoPanel;
 use worker_section::create_worker_section;
 
 #[derive(Clone)]
-pub struct AdvancedPage {
+struct AdvancedPage {
     root: SelectionArea,
 }
 
 fui_component!(AdvancedPage => root);
 
 impl AdvancedPage {
-    pub fn new() -> Self {
+    fn new() -> Self {
         use_system_theme();
         let sections = ui! {
             column().fill_width() {
@@ -49,7 +50,8 @@ impl AdvancedPage {
                 .min_height(600.0, Unit::Pixel)
                 .fill_size()
                 .padding(24.0, 24.0, 24.0, 24.0) {
-                    create_route_chrome("Advanced - FUI-RS Demo", "advanced", 16.0),
+                    create_nav_bar("Advanced - FUI-RS Demo", "advanced"),
+                    vertical_spacer(16.0),
                     panel().fill_size() {
                         styled_text("Advanced", DemoTextStyle::Heading2),
                         vertical_spacer(8.0),
@@ -73,8 +75,6 @@ impl AdvancedPage {
             },
         }
     }
-
-    pub fn root(&self) -> SelectionArea {
-        self.root.clone()
-    }
 }
+
+fui_app!(AdvancedPage, AdvancedPage::new);
