@@ -1,0 +1,13 @@
+[package]
+name = "fui-rs-demo-web-home"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "fui_rs_demo_web_home"
+crate-type = ["cdylib"]
+
+[dependencies]
+fui-rs = { workspace = true }
+fui_rs_demo_home = { package = "fui-rs-demo-home", path = "../../routes/home" }
+fui_rs_demo_shared = { package = "fui-rs-demo-shared", path = "../../shared" }

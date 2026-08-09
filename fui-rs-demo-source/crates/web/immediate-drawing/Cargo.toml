@@ -1,0 +1,12 @@
+[package]
+name = "fui-rs-demo-web-immediate-drawing"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "fui_rs_demo_web_immediate_drawing"
+crate-type = ["cdylib"]
+
+[dependencies]
+fui-rs = { workspace = true }
+fui_rs_demo_immediate_drawing = { package = "fui-rs-demo-immediate-drawing", path = "../../routes/immediate-drawing" }

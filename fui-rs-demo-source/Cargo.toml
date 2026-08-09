@@ -1,9 +1,9 @@
 [workspace]
-members = ["crates/shared", "crates/advanced-worker", "crates/routes/*"]
+members = ["crates/ui", "crates/native", "crates/worker", "crates/shared", "crates/routes/*", "crates/web/*"]
 resolver = "2"
 
 [workspace.dependencies]
-fui-rs = { path = "node_modules/@effindomv2/fui-rs" }
+fui-rs = "=0.2.16"
 
 [profile.dev]
 debug = 0

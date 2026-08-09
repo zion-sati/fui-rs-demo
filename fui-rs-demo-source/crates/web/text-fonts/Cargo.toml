@@ -1,0 +1,12 @@
+[package]
+name = "fui-rs-demo-web-text-fonts"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "fui_rs_demo_web_text_fonts"
+crate-type = ["cdylib"]
+
+[dependencies]
+fui-rs = { workspace = true }
+fui_rs_demo_text_fonts = { package = "fui-rs-demo-text-fonts", path = "../../routes/text-fonts" }

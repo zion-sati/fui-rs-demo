@@ -819,6 +819,9 @@ function createHostImportModule(deps) {
     fui_set_application_caption(captionPtr, captionLen) {
       deps.platformHost.setApplicationCaption(deps.readAppUtf8(captionPtr, captionLen));
     },
+    fui_set_page_zoom_enabled(enabled) {
+      deps.getRuntime().setPageZoomEnabled(enabled !== 0);
+    },
     fui_set_pointer_capture(handle) {
       deps.getRuntime().setCapturedPointerHandle(toBigIntHandle(handle));
     },
@@ -3533,10 +3536,11 @@ var LOADING_OVERLAY_ID = "effindom-loading-overlay";
 var LOADING_TITLE_ID = "effindom-loading-title";
 var LOADING_DETAIL_ID = "effindom-loading-detail";
 var DEFAULT_LOADING_OVERLAY_STYLES = `
-.effindom-loading-overlay{--effindom-loader-color:#38bdf8;--effindom-loader-background:rgba(6,12,21,.88);position:absolute;inset:0;display:grid;place-items:center;padding:24px;box-sizing:border-box;background:linear-gradient(145deg,rgba(2,6,23,.76),rgba(15,23,42,.9));backdrop-filter:blur(10px);z-index:2;color:#e2e8f0;opacity:1;transition:opacity 140ms ease;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:default;user-select:none;-webkit-user-select:none}
-.effindom-loading-overlay[hidden]{display:none}.effindom-loading-card{max-width:420px;padding:24px 26px;border:1px solid rgba(148,163,184,.28);border-radius:20px;background:var(--effindom-loader-background);text-align:center;box-shadow:0 22px 60px rgba(2,6,23,.34)}
+.effindom-loading-overlay{--effindom-loader-color:#38bdf8;--effindom-loader-background:rgba(6,12,21,.88);--effindom-loader-overlay-background:linear-gradient(145deg,rgba(2,6,23,.76),rgba(15,23,42,.9));--effindom-loader-text:#e2e8f0;--effindom-loader-border:rgba(148,163,184,.28);--effindom-loader-shadow:rgba(2,6,23,.34);--effindom-loader-kicker:#7dd3fc;--effindom-loader-detail:#cbd5e1;--effindom-loader-error-border:rgba(248,113,113,.5);--effindom-loader-error-background:rgba(69,10,10,.86);position:absolute;inset:0;display:grid;place-items:center;padding:24px;box-sizing:border-box;background:var(--effindom-loader-overlay-background);backdrop-filter:blur(10px);z-index:2;color:var(--effindom-loader-text);opacity:1;transition:opacity 140ms ease;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;cursor:default;pointer-events:none;user-select:none;-webkit-user-select:none}
+.effindom-loading-overlay[hidden]{display:none}.effindom-loading-card{max-width:420px;padding:24px 26px;border:1px solid var(--effindom-loader-border);border-radius:20px;background:var(--effindom-loader-background);text-align:center;box-shadow:0 22px 60px var(--effindom-loader-shadow)}
 .effindom-loading-visual{width:88px;height:64px;margin:0 auto 18px;color:var(--effindom-loader-color)}.effindom-loading-frame{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-dasharray:164;animation:effindom-frame 1.8s cubic-bezier(.65,0,.35,1) infinite}.effindom-loading-node{fill:currentColor;transform-box:fill-box;transform-origin:center;animation:effindom-node 1.8s ease-in-out infinite}.effindom-loading-node-b{animation-delay:-.9s}
-.effindom-loading-kicker{margin:0 0 8px;font:700 11px/1.2 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#7dd3fc}.effindom-loading-title{margin:0;font:600 24px/1.2 system-ui,sans-serif}.effindom-loading-detail{margin:10px 0 0;font:14px/1.5 system-ui,sans-serif;color:#cbd5e1}.effindom-loading-overlay[data-state=error] .effindom-loading-card{border-color:rgba(248,113,113,.5);background:rgba(69,10,10,.86)}.effindom-loading-overlay[data-state=error] .effindom-loading-visual{display:none}
+.effindom-loading-kicker{margin:0 0 8px;font:700 11px/1.2 system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--effindom-loader-kicker)}.effindom-loading-title{margin:0;font:600 24px/1.2 system-ui,sans-serif}.effindom-loading-detail{margin:10px 0 0;font:14px/1.5 system-ui,sans-serif;color:var(--effindom-loader-detail)}.effindom-loading-overlay[data-state=error] .effindom-loading-card{border-color:var(--effindom-loader-error-border);background:var(--effindom-loader-error-background)}.effindom-loading-overlay[data-state=error] .effindom-loading-visual{display:none}
+@media(prefers-color-scheme:light){.effindom-loading-overlay{--effindom-loader-color:#0284c7;--effindom-loader-background:rgba(255,255,255,.92);--effindom-loader-overlay-background:linear-gradient(145deg,rgba(248,250,252,.82),rgba(226,232,240,.94));--effindom-loader-text:#0f172a;--effindom-loader-border:rgba(100,116,139,.28);--effindom-loader-shadow:rgba(15,23,42,.18);--effindom-loader-kicker:#0369a1;--effindom-loader-detail:#475569;--effindom-loader-error-border:rgba(220,38,38,.38);--effindom-loader-error-background:rgba(254,226,226,.94)}}
 @keyframes effindom-frame{0%{stroke-dashoffset:164;opacity:.35}45%,65%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:-164;opacity:.35}}@keyframes effindom-node{0%,100%{transform:scale(.65);opacity:.35}50%{transform:scale(1.15);opacity:1}}@media(prefers-reduced-motion:reduce){.effindom-loading-frame,.effindom-loading-node{animation:none}.effindom-loading-frame{stroke-dashoffset:0}}
 `;
 var DEFAULT_LOADING_OVERLAY_BODY = `
@@ -3652,9 +3656,18 @@ function waitForFrame() {
   });
 }
 var HarnessUiChrome = class {
+  loadingOverlay = null;
   ensureLoadingOverlay() {
+    if (this.loadingOverlay !== null) {
+      if (!this.loadingOverlay.isConnected) {
+        const canvas2 = document.getElementById("fui-canvas");
+        (canvas2?.parentElement ?? document.body).appendChild(this.loadingOverlay);
+      }
+      return this.loadingOverlay;
+    }
     const existing = document.getElementById(LOADING_OVERLAY_ID);
     if (existing instanceof HTMLElement) {
+      this.loadingOverlay = existing;
       return existing;
     }
     if (document.getElementById("effindom-loading-overlay-default-styles") === null) {
@@ -3673,6 +3686,7 @@ var HarnessUiChrome = class {
     overlay.innerHTML = DEFAULT_LOADING_OVERLAY_BODY;
     const canvas = document.getElementById("fui-canvas");
     (canvas?.parentElement ?? document.body).appendChild(overlay);
+    this.loadingOverlay = overlay;
     return overlay;
   }
   getLoadingOverlayText() {
@@ -3697,6 +3711,11 @@ var HarnessUiChrome = class {
       return;
     }
     overlay.dataset.state = state;
+    const canvas = document.getElementById("fui-canvas");
+    if (canvas instanceof HTMLCanvasElement && canvas.dataset.effindomLoadingVisibility === void 0) {
+      canvas.dataset.effindomLoadingVisibility = canvas.style.visibility;
+      canvas.style.visibility = "hidden";
+    }
     overlay.hidden = false;
     overlay.setAttribute("aria-hidden", "false");
     titleNode.textContent = title;
@@ -3709,13 +3728,22 @@ var HarnessUiChrome = class {
     this.hideLoadingOverlay();
   }
   hideLoadingOverlay() {
-    const overlay = document.getElementById(LOADING_OVERLAY_ID);
-    if (!(overlay instanceof HTMLElement)) {
-      return;
+    const overlay = this.loadingOverlay ?? document.getElementById(LOADING_OVERLAY_ID);
+    if (overlay instanceof HTMLElement) {
+      this.loadingOverlay = overlay;
+      overlay.hidden = true;
+      overlay.dataset.state = "ready";
+      overlay.setAttribute("aria-hidden", "true");
+      overlay.remove();
     }
-    overlay.hidden = true;
-    overlay.dataset.state = "ready";
-    overlay.setAttribute("aria-hidden", "true");
+    const canvas = document.getElementById("fui-canvas");
+    if (canvas instanceof HTMLCanvasElement) {
+      const previousVisibility = canvas.dataset.effindomLoadingVisibility;
+      if (previousVisibility !== void 0) {
+        canvas.style.visibility = previousVisibility;
+        delete canvas.dataset.effindomLoadingVisibility;
+      }
+    }
   }
   setUrlPreviewText(text) {
     const bar = ensureUrlPreviewBar();
@@ -4561,9 +4589,6 @@ function applyHarnessRuntimeOptions(options) {
   if (options.devToolsDomMirror !== void 0) {
     update.devToolsDomMirror = options.devToolsDomMirror;
   }
-  if (options.pageZoom !== void 0) {
-    update.pageZoom = options.pageZoom;
-  }
   if (Object.keys(update).length === 0) {
     return;
   }
@@ -4592,9 +4617,11 @@ function startManagedHarness(options) {
   const configuredBuildMode = options.buildMode ?? runtimeWindow.__effindomRuntime?.buildMode;
   const debugDelayParam = new URLSearchParams(window.location.search).get("effindom-loading-delay");
   const parsedDebugDelay = debugDelayParam === null ? 0 : Number(debugDelayParam);
-  const loadingOptions = options.loading === false ? null : {
-    ...options.loading,
-    debugDelayMs: configuredBuildMode === "debug" && Number.isFinite(parsedDebugDelay) ? Math.max(options.loading?.debugDelayMs ?? 0, parsedDebugDelay) : 0
+  const configuredFuiLoading = window.__effindomFuiConfig?.web?.loading;
+  const configuredLoading = options.loading ?? configuredFuiLoading;
+  const loadingOptions = configuredLoading === false ? null : {
+    ...configuredLoading,
+    debugDelayMs: configuredBuildMode === "debug" && Number.isFinite(parsedDebugDelay) ? Math.max(options.loading === false ? 0 : options.loading?.debugDelayMs ?? 0, parsedDebugDelay) : 0
   };
   const loadingController = loadingOptions === null ? null : new HarnessLoadingController(
     harnessUiChrome,
@@ -5325,13 +5352,18 @@ function startManagedHarness(options) {
           0,
           0,
           0,
+          0,
+          true,
+          0,
+          0,
+          0,
           0
         ));
       }
       return false;
     };
     const previousPointerMetadataCallback = callbacks.onPointerEventWithMetadata;
-    callbacks.onPointerEventWithMetadata = (type, handle, x, y, modifiers, pointerId, pointerType, button, buttons, pressure, width, height, clickCount) => {
+    callbacks.onPointerEventWithMetadata = (type, handle, x, y, modifiers, pointerId, pointerType, button, buttons, pressure, width, height, clickCount, isPrimary, tangentialPressure, tiltX, tiltY, twist) => {
       previousPointerMetadataCallback?.(
         type,
         handle,
@@ -5345,7 +5377,12 @@ function startManagedHarness(options) {
         pressure,
         width,
         height,
-        clickCount
+        clickCount,
+        isPrimary,
+        tangentialPressure,
+        tiltX,
+        tiltY,
+        twist
       );
       previousPointerCallback?.(type, handle, x, y, modifiers);
       const session = currentSession;
@@ -5365,7 +5402,12 @@ function startManagedHarness(options) {
         pressure,
         width,
         height,
-        clickCount
+        clickCount,
+        isPrimary,
+        tangentialPressure,
+        tiltX,
+        tiltY,
+        twist
       ));
     };
     const previousWheelCallback = callbacks.onWheelEventWithCoords;
@@ -5904,7 +5946,7 @@ function startManagedHarness(options) {
       appFlushRequested = false;
       cancelAllHostTimers();
       bitmapHost.clearTextures(runtime);
-      runtime.setAppFrameHandler(null);
+      runtime.setAppFrameController(null);
       runtime.setCapturedPointerHandle(null);
       runtime.clearPointerHover();
       runtime.canvas.style.cursor = "default";
@@ -5934,7 +5976,7 @@ function startManagedHarness(options) {
       appFlushRequested = false;
       cancelAllHostTimers();
       bitmapHost.clearTextures(runtime);
-      runtime.setAppFrameHandler(null);
+      runtime.setAppFrameController(null);
       runtime.setCapturedPointerHandle(null);
       runtime.clearPointerHover();
       harnessUiChrome.setUrlPreviewText("");
@@ -6004,18 +6046,21 @@ function startManagedHarness(options) {
         }
       };
       notifyRouteForCurrentLocation(session);
-      runtime.setAppFrameHandler((timestampMs) => {
-        if (currentSession !== session) {
-          return;
-        }
-        exports.__fui_on_frame(timestampMs);
-        appFlushRequested = false;
-        exports.__flushRenders();
+      runtime.setAppFrameController({
+        onFrame: (timestampMs) => {
+          if (currentSession !== session) {
+            return;
+          }
+          exports.__fui_on_frame(timestampMs);
+          appFlushRequested = false;
+          exports.__flushRenders();
+        },
+        needsAnimationFrame: () => currentSession === session && exports.__fui_needs_animation_frame()
       });
       runtime.resetLogs();
       loadOptions.run(exports);
       connectHostEvents(session, exports, loadOptions.hostEvents);
-      runtime.runAppFrameHandler(performance.now());
+      runtime.runAppFrameController(performance.now());
       notifyViewport(session);
       notifySystemTheme(session);
       if (restoredSnapshot !== null) {
@@ -6177,7 +6222,6 @@ function startRoutedHarness(config) {
   startManagedHarness({
     ...config.buildMode === void 0 ? {} : { buildMode: config.buildMode },
     ...config.devToolsDomMirror === void 0 ? {} : { devToolsDomMirror: config.devToolsDomMirror },
-    ...config.pageZoom === void 0 ? {} : { pageZoom: config.pageZoom },
     ...config.loading === void 0 ? {} : { loading: config.loading },
     ...config.instantiateApp === void 0 ? {} : { instantiateApp: config.instantiateApp },
     onReady: async (controller) => {
@@ -6234,30 +6278,10 @@ var appHostServices = defineHostServices({
 // routes.json
 var routes_default = {
   routes: [
-    {
-      key: "home",
-      routePath: "/",
-      wasmPath: "/home.wasm",
-      title: "Home"
-    },
-    {
-      key: "text-fonts",
-      routePath: "/text-fonts/",
-      wasmPath: "/text-fonts.wasm",
-      title: "Text & Fonts"
-    },
-    {
-      key: "advanced",
-      routePath: "/advanced/",
-      wasmPath: "/advanced.wasm",
-      title: "Advanced"
-    },
-    {
-      key: "immediate-drawing",
-      routePath: "/immediate-drawing/",
-      wasmPath: "/immediate-drawing.wasm",
-      title: "Immediate Drawing"
-    }
+    { key: "home", routePath: "/", wasmPath: "/home.wasm", title: "Home" },
+    { key: "text-fonts", routePath: "/text-fonts/", wasmPath: "/text-fonts.wasm", title: "Text & Fonts" },
+    { key: "advanced", routePath: "/advanced/", wasmPath: "/advanced.wasm", title: "Advanced" },
+    { key: "immediate-drawing", routePath: "/immediate-drawing/", wasmPath: "/immediate-drawing.wasm", title: "Immediate Drawing" }
   ]
 };
 

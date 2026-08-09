@@ -1,0 +1,47 @@
+schema-version = 1
+
+[application]
+identifier = "dev.effindom.fui-rs-demo"
+caption = "FUI-RS Demo"
+icon = "assets/application-icon.png"
+cargo-manifest = "crates/native/Cargo.toml"
+targets = ["native", "web"]
+
+[[web-routes]]
+route-path = "/"
+wasm-artifact = "home.wasm"
+cargo-manifest = "crates/web/home/Cargo.toml"
+
+[[web-routes]]
+route-path = "/text-fonts/"
+wasm-artifact = "text-fonts.wasm"
+cargo-manifest = "crates/web/text-fonts/Cargo.toml"
+
+[[web-routes]]
+route-path = "/advanced/"
+wasm-artifact = "advanced.wasm"
+cargo-manifest = "crates/web/advanced/Cargo.toml"
+
+[[web-routes]]
+route-path = "/immediate-drawing/"
+wasm-artifact = "immediate-drawing.wasm"
+cargo-manifest = "crates/web/immediate-drawing/Cargo.toml"
+
+[assets]
+sources = ["assets"]
+
+[[workers]]
+id = "advanced"
+web-artifact = "./workers.wasm"
+native-cargo-manifest = "crates/worker/Cargo.toml"
+entries = ["advancedPrimeWorker", "advancedFailureWorker", "advancedFileProcessorWorker"]
+host-services = ["demoWorkerClockWallClockSinceEpochMs"]
+
+[package.macos]
+minimum-version = "13.0"
+
+[package.windows]
+publisher = "CN=Development"
+
+[package.linux]
+categories = ["Development", "Utility"]

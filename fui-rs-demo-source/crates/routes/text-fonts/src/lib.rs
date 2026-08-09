@@ -1,5 +1,4 @@
 mod custom_font_section;
-mod generated;
 mod model;
 mod rich_text_section;
 mod view;
@@ -9,7 +8,7 @@ use std::rc::Rc;
 use view::TextFontsState;
 
 #[derive(Clone)]
-struct TextFontsPage {
+pub struct TextFontsPage {
     root: SelectionArea,
     _state: Rc<TextFontsState>,
 }
@@ -17,13 +16,21 @@ struct TextFontsPage {
 fui_component!(TextFontsPage => root);
 
 impl TextFontsPage {
-    fn new() -> Self {
+    pub fn new() -> Self {
         let state = TextFontsState::new();
         Self {
             root: state.root.clone(),
             _state: state,
         }
     }
+
+    pub fn root(&self) -> SelectionArea {
+        self.root.clone()
+    }
 }
 
-fui_app!(TextFontsPage, TextFontsPage::new);
+impl Default for TextFontsPage {
+    fn default() -> Self {
+        Self::new()
+    }
+}
