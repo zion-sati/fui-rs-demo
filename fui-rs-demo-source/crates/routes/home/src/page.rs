@@ -25,7 +25,7 @@ fn accessibility_description() -> RichText {
 }
 
 impl HomePage {
-    pub(super) fn new() -> Self {
+    pub fn new(clock: AppClock) -> Self {
         use_system_theme();
         let dropdown_items = vec![
             DropdownItem::new("tiny", "Tiny"),
@@ -72,8 +72,12 @@ impl HomePage {
                 DialogAppearance::new().card(SurfaceAppearance::new().corners(Corners::all(16.0))),
             )
         };
-        dialog.accept_action_button().text("Apply");
-        dialog.cancel_action_button().text("Cancel");
+        let dialog_accept_button = dialog.accept_action_button();
+        dialog_accept_button.text("Apply");
+        apply_demo_button_style(&dialog_accept_button, DemoButtonTone::Primary);
+        let dialog_cancel_button = dialog.cancel_action_button();
+        dialog_cancel_button.text("Cancel");
+        apply_demo_button_style(&dialog_cancel_button, DemoButtonTone::Secondary);
 
         let foundations_toggle_button = primary_button("Disable scoped child");
         let foundations_scoped_button = primary_button("Scoped child action");
@@ -192,7 +196,7 @@ impl HomePage {
                 DemoTextStyle::BodySecondary
             ),
             vertical_spacer(HEADING_TO_BODY_TIGHT_GAP_PX),
-            NavLink::with_label(
+            demo_nav_link(
                 "https://github.com/zion-sati/fui-rs-demo",
                 "View the FUI-RS demo source code on GitHub",
             ),
@@ -208,11 +212,10 @@ impl HomePage {
         let content = ui! {
             column()
             .min_width(800.0, Unit::Pixel)
-            .min_height(600.0, Unit::Pixel)
-            .fill_size()
-            .padding(24.0, 24.0, 24.0, 24.0) {
-                create_nav_bar("Home Page - FUI-RS Demo ✌🏼", "home"),
-                vertical_spacer(PAGE_SECTION_GAP_PX),
+                .min_height(600.0, Unit::Pixel)
+                .fill_size()
+                .padding(24.0, 24.0, 24.0, 24.0) {
+                create_route_chrome("Home Page - FUI-RS Demo ✌🏼", "home", PAGE_SECTION_GAP_PX),
                 row()
                     .align_items(AlignItems::Stretch)
                     .fill_height() {
@@ -260,11 +263,10 @@ impl HomePage {
             foundations_action_count: Cell::new(0),
             foundations_key_target_focused: Cell::new(false),
             foundations_last_key: RefCell::new(String::new()),
-            start_tick: Cell::new(-1),
-            host_event_subscriptions: RefCell::new(Vec::new()),
+            clock_subscription: RefCell::new(None),
             _bitmap: bitmap,
         });
-        wire_events(&state, &action_button);
+        wire_events(&state, &action_button, &clock);
         state.refresh_foundations_state();
         state.refresh_key_target();
         state.refresh_summary();
@@ -275,7 +277,7 @@ impl HomePage {
     }
 }
 
-fn wire_events(state: &Rc<HomeState>, action_button: &Button) {
+fn wire_events(state: &Rc<HomeState>, action_button: &Button, clock: &AppClock) {
     action_button.on_click({
         let state = Rc::downgrade(state);
         move |_| {
@@ -401,16 +403,13 @@ fn wire_events(state: &Rc<HomeState>, action_button: &Button) {
             }
         }
     });
-    let subscription = generated::host_events::on_app_clock_tick({
+    let subscription = clock.subscribe({
         let state = Rc::downgrade(state);
-        move |tick| {
+        move |elapsed| {
             if let Some(state) = state.upgrade() {
-                state.set_elapsed_seconds(tick);
+                state.set_elapsed_seconds(elapsed);
             }
         }
     });
-    state
-        .host_event_subscriptions
-        .borrow_mut()
-        .push(subscription);
+    state.clock_subscription.replace(Some(subscription));
 }

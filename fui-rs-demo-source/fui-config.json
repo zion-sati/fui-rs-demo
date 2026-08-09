@@ -1,0 +1,8 @@
+{
+  "$schema": "https://effindom.dev/schemas/fui-config.schema.json",
+  "version": 1,
+  "application": { "pageZoom": "enabled" },
+  "web": {
+    "loading": { "delayMs": 300, "minimumVisibleMs": 300 }
+  }
+}

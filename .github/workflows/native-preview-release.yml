@@ -1,0 +1,63 @@
+name: FUI-RS native preview release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    if: startsWith(github.event.release.tag_name, 'native-preview-')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - name: Resolve verified native preview CI
+        id: ci
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          commit="$(git rev-parse HEAD)"
+          run_id="$(gh run list \
+            --repo "$GITHUB_REPOSITORY" \
+            --workflow native-preview-ci.yml \
+            --commit "$commit" \
+            --event push \
+            --status success \
+            --limit 20 \
+            --json databaseId \
+            --jq '.[0].databaseId')"
+          test -n "$run_id"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+      - name: Download attested native previews
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p .release/native-previews
+          gh run download "${{ steps.ci.outputs.run_id }}" \
+            --repo "$GITHUB_REPOSITORY" \
+            --dir .release/native-previews
+          test "$(find .release/native-previews -type f \( -name '*.zip' -o -name '*.tar.gz' \) | wc -l | tr -d ' ')" = 6
+          test "$(find .release/native-previews -type f -name '*.sha256' | wc -l | tr -d ' ')" = 6
+      - name: Upload native previews to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          find .release/native-previews -type f \
+            \( -name '*.zip' -o -name '*.tar.gz' -o -name '*.sha256' \) \
+            -print0 | xargs -0 gh release upload "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" --clobber
+      - name: Report native preview release
+        run: |
+          {
+            echo '## FUI-RS native developer previews'
+            echo
+            echo "Source CI run: ${{ steps.ci.outputs.run_id }}"
+            echo "Release: ${{ github.event.release.html_url }}"
+            echo 'Published six unsigned, attested native preview archives and checksums.'
+          } >> "$GITHUB_STEP_SUMMARY"

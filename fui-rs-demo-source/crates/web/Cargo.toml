@@ -1,0 +1,12 @@
+[package]
+name = "fui-rs-demo-web"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "fui_rs_demo_web"
+crate-type = ["cdylib"]
+
+[dependencies]
+fui = { package = "fui-rs", version = "=0.2.16" }
+fui_rs_demo_ui = { package = "fui-rs-demo-ui", path = "../ui" }

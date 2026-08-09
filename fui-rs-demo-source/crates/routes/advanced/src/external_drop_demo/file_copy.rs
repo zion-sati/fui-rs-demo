@@ -39,14 +39,14 @@ impl ExternalDropDemoState {
             self.sync_status("External drop status: worker copy already running");
             return;
         }
-        if !File::capabilities().can_process_in_worker_to_picked_file {
+        if !DemoFile::capabilities().can_process_in_worker_to_picked_file {
             self.sync_status("External drop status: this browser needs worker plus native save-picker support for the worker copy demo");
             return;
         }
         let suggested_name = resolve_copy_file_name(&file);
         let weak_state = Rc::downgrade(self);
-        let request = File::process_file_in_worker(file.clone())
-            .worker("../advanced-workers.wasm", "advancedFileProcessorWorker")
+        let request = DemoFile::process_file_in_worker(file.clone())
+            .worker("./workers.wasm", "advancedFileProcessorWorker")
             .save_to_picked_file(suggested_name.clone())
             .on_progress({
                 let weak_state = weak_state.clone();
