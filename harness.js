@@ -3860,6 +3860,17 @@ var HarnessLoadingController = class {
       this.presenter.showLoading("loading", this.title, this.detail);
     }
   }
+  /**
+   * The app has committed its first frame, which the next animation frame draws. An overlay still waiting out its
+   * delay would only cover that frame, so it is not revealed; one already showing stays until complete(), and a debug
+   * delay still reveals it.
+   */
+  contentReady(operation) {
+    if (!this.isCurrent(operation) || this.visibleAtMs !== null || this.debugDelayMs > 0) {
+      return;
+    }
+    this.cancelRevealTimer();
+  }
   async complete(operation) {
     if (!this.isCurrent(operation)) {
       return;
@@ -4529,6 +4540,25 @@ function createUiImportModule(deps) {
   };
 }
 
+// node_modules/@effindomv2/runtime/src/managed-harness/wasm-module-cache.ts
+var WasmModuleCache = class {
+  wasmModuleCache = /* @__PURE__ */ new Map();
+  async loadWasmModule(wasmPath) {
+    const cached = this.wasmModuleCache.get(wasmPath);
+    if (cached !== void 0) {
+      return cached;
+    }
+    const compilePromise = fetch(wasmPath, { cache: "no-store" }).then(async (response) => {
+      if (!response.ok) {
+        throw new Error(`Failed to load wasm app: ${wasmPath}`);
+      }
+      return await WebAssembly.compile(await response.arrayBuffer());
+    });
+    this.wasmModuleCache.set(wasmPath, compilePromise);
+    return compilePromise;
+  }
+};
+
 // node_modules/@effindomv2/runtime/src/managed-harness/platform-host.ts
 var BrowserManagedPlatformHost = class {
   nowMilliseconds() {
@@ -4702,8 +4732,7 @@ function startManagedHarness(options) {
     let lastHandledUrlHref = window.location.href;
     let latestCommandWords = [];
     let latestRootHandle = null;
-    const wasmByteCache = /* @__PURE__ */ new Map();
-    const wasmModuleCache = /* @__PURE__ */ new Map();
+    const wasmModules = new WasmModuleCache();
     let lastSystemAccentColor = -1;
     harnessUiChrome.setUrlPreviewText("");
     function getCurrentSession() {
@@ -5894,29 +5923,6 @@ function startManagedHarness(options) {
       }
     };
     window.__fui_debug = debugApi;
-    async function fetchWasmBytes(wasmPath) {
-      const cached = wasmByteCache.get(wasmPath);
-      if (cached !== void 0) {
-        return cached;
-      }
-      const fetchPromise = fetch(wasmPath, { cache: "no-store" }).then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to load wasm app: ${wasmPath}`);
-        }
-        return response.arrayBuffer();
-      });
-      wasmByteCache.set(wasmPath, fetchPromise);
-      return fetchPromise;
-    }
-    async function loadWasmModule(wasmPath) {
-      const cached = wasmModuleCache.get(wasmPath);
-      if (cached !== void 0) {
-        return cached;
-      }
-      const compilePromise = fetchWasmBytes(wasmPath).then((bytes) => WebAssembly.compile(bytes));
-      wasmModuleCache.set(wasmPath, compilePromise);
-      return compilePromise;
-    }
     function validateAppImports(wasmModule, hostServices) {
       const allowedHostServiceImports = getHostServiceImportNames(hostServices);
       for (const imported of WebAssembly.Module.imports(wasmModule)) {
@@ -6009,7 +6015,7 @@ function startManagedHarness(options) {
         }
       });
       hydrateCurrentPersistedEntries(restoredSnapshot);
-      const wasmModule = await loadWasmModule(loadOptions.wasmPath);
+      const wasmModule = await wasmModules.loadWasmModule(loadOptions.wasmPath);
       validateAppImports(wasmModule, loadOptions.hostServices);
       const instance = await (loadOptions.instantiateApp ?? instantiateApp)(
         wasmModule,
@@ -6065,6 +6071,11 @@ function startManagedHarness(options) {
       notifySystemTheme(session);
       if (restoredSnapshot !== null) {
         restoreCurrentPersistedUiState(`loading ${loadOptions.wasmPath}`);
+      }
+      if (loadingOperation !== null) {
+        loadingController?.contentReady(loadingOperation);
+      }
+      if (restoredSnapshot !== null) {
         await settleCurrentSessionAfterRestore(`loading ${loadOptions.wasmPath}`);
       }
       const context = {

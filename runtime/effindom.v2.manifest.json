@@ -1,68 +1,68 @@
 {
   "version": "1.0",
-  "manifest_hash": "Keh0KvrBSijLDWH3mfaP8m0pgjK9kJ25UGv21Pr6jY4",
+  "manifest_hash": "OkcNpT_Nb3DccS_dn2DMAdtdJP0uJVriC-YqlqK0ZVo",
   "architectures": {
     "wasm64-simd": {
       "core": {
-        "js": "./runtime/effindom-core-v2.wasm64-simd.XLuUjoXYKBjdksA20I_388LOmQ839afWyIq9uHiwRS4.js",
-        "js_integrity": "sha256-XLuUjoXYKBjdksA20I/388LOmQ839afWyIq9uHiwRS4=",
-        "wasm": "./runtime/effindom-core-v2.wasm64-simd.0z7XMWSq3l1iGiMl7R7XtQ0Q_0qFvACOKa8FZ5b5Lgc.wasm",
-        "wasm_integrity": "sha256-0z7XMWSq3l1iGiMl7R7XtQ0Q/0qFvACOKa8FZ5b5Lgc="
+        "js": "./runtime/effindom-core-v2.wasm64-simd.X0DyLRAi78zAbbe2HBU8_D2nGjvip9i9Z8O0pCDGWWA.js",
+        "js_integrity": "sha256-X0DyLRAi78zAbbe2HBU8/D2nGjvip9i9Z8O0pCDGWWA=",
+        "wasm": "./runtime/effindom-core-v2.wasm64-simd.MlYwKKARf8SpX1XQBk_E7gNBQ8fe8oAGLuxziRntE4I.wasm",
+        "wasm_integrity": "sha256-MlYwKKARf8SpX1XQBk/E7gNBQ8fe8oAGLuxziRntE4I="
       },
       "ui": {
         "js": "./runtime/effindom-ui-v2.wasm64-simd.Lp4TryH-eQQ2LCglJu_R02yao7m-cTpecWnHbHatCNw.js",
         "js_integrity": "sha256-Lp4TryH+eQQ2LCglJu/R02yao7m+cTpecWnHbHatCNw=",
-        "wasm": "./runtime/effindom-ui-v2.wasm64-simd.nnHgjs9QfOCAM45-KoZmSw9UfrkpDnmGaa59yYnJjL0.wasm",
-        "wasm_integrity": "sha256-nnHgjs9QfOCAM45+KoZmSw9UfrkpDnmGaa59yYnJjL0="
+        "wasm": "./runtime/effindom-ui-v2.wasm64-simd.GbJ62Zp6fQjmU7UkyRSR6m734xKsSVClQyalR8IrIpo.wasm",
+        "wasm_integrity": "sha256-GbJ62Zp6fQjmU7UkyRSR6m734xKsSVClQyalR8IrIpo="
       }
     },
     "wasm64": {
       "core": {
-        "js": "./runtime/effindom-core-v2.wasm64.VWdnI8iWeqwVotFQ1Xz4qB50zfnTmUc1zu5Rxp6vTK4.js",
-        "js_integrity": "sha256-VWdnI8iWeqwVotFQ1Xz4qB50zfnTmUc1zu5Rxp6vTK4=",
-        "wasm": "./runtime/effindom-core-v2.wasm64.mTAJbtLgVhG218uWVDPUjLTViorOgF2ivEk0GH-sICY.wasm",
-        "wasm_integrity": "sha256-mTAJbtLgVhG218uWVDPUjLTViorOgF2ivEk0GH+sICY="
+        "js": "./runtime/effindom-core-v2.wasm64.s0uKVHbbURgxEKf_ecF5j5f1MVOCFdHw1ibO_3XrxUg.js",
+        "js_integrity": "sha256-s0uKVHbbURgxEKf/ecF5j5f1MVOCFdHw1ibO/3XrxUg=",
+        "wasm": "./runtime/effindom-core-v2.wasm64.ZAsAOfMrH8Aj7qesE00IMmBb7Fy4f34s6pZjCeZeUxo.wasm",
+        "wasm_integrity": "sha256-ZAsAOfMrH8Aj7qesE00IMmBb7Fy4f34s6pZjCeZeUxo="
       },
       "ui": {
         "js": "./runtime/effindom-ui-v2.wasm64.Lp4TryH-eQQ2LCglJu_R02yao7m-cTpecWnHbHatCNw.js",
         "js_integrity": "sha256-Lp4TryH+eQQ2LCglJu/R02yao7m+cTpecWnHbHatCNw=",
-        "wasm": "./runtime/effindom-ui-v2.wasm64.0aR8KBZjrd5dqX1ThkQEcAqXdZZcRtsM2dUEIoeB7n4.wasm",
-        "wasm_integrity": "sha256-0aR8KBZjrd5dqX1ThkQEcAqXdZZcRtsM2dUEIoeB7n4="
+        "wasm": "./runtime/effindom-ui-v2.wasm64.E_szuHv0USjg7ABvPjI3bCQo74aj-S66dgczQoNvOxs.wasm",
+        "wasm_integrity": "sha256-E/szuHv0USjg7ABvPjI3bCQo74aj+S66dgczQoNvOxs="
       }
     },
     "wasm32-simd": {
       "core": {
-        "js": "./runtime/effindom-core-v2.wasm32-simd.yzZy_eAXVKQnmNu4PI7mgV4MmV9cojL3szhkPyLZUZA.js",
-        "js_integrity": "sha256-yzZy/eAXVKQnmNu4PI7mgV4MmV9cojL3szhkPyLZUZA=",
-        "wasm": "./runtime/effindom-core-v2.wasm32-simd.eg_rcOjM8aYMPGbK-vtjOcdkmoHFPh0KkTzD_PhicAo.wasm",
-        "wasm_integrity": "sha256-eg/rcOjM8aYMPGbK+vtjOcdkmoHFPh0KkTzD/PhicAo="
+        "js": "./runtime/effindom-core-v2.wasm32-simd.AInR9VM9by2uordNyEe8bRCjHlMAT6PCydafDivbhs4.js",
+        "js_integrity": "sha256-AInR9VM9by2uordNyEe8bRCjHlMAT6PCydafDivbhs4=",
+        "wasm": "./runtime/effindom-core-v2.wasm32-simd.vJS3sRC7CY9RUcP0mshZ_d5jPMnYCmSsn4JSrPDUUX0.wasm",
+        "wasm_integrity": "sha256-vJS3sRC7CY9RUcP0mshZ/d5jPMnYCmSsn4JSrPDUUX0="
       },
       "ui": {
         "js": "./runtime/effindom-ui-v2.wasm32-simd.h1369EzClzCy-M43UivfD8jZnBwe-jADnnw5alXJbdg.js",
         "js_integrity": "sha256-h1369EzClzCy+M43UivfD8jZnBwe+jADnnw5alXJbdg=",
-        "wasm": "./runtime/effindom-ui-v2.wasm32-simd.9cDcst1uKnWz2C3Pi3QGGkXmEq8uCrgSqR3ljXXdGzE.wasm",
-        "wasm_integrity": "sha256-9cDcst1uKnWz2C3Pi3QGGkXmEq8uCrgSqR3ljXXdGzE="
+        "wasm": "./runtime/effindom-ui-v2.wasm32-simd.qhwkvRcYiVlI5svTgGRvN_Z1ySeUeqDzr0h5YogrKHI.wasm",
+        "wasm_integrity": "sha256-qhwkvRcYiVlI5svTgGRvN/Z1ySeUeqDzr0h5YogrKHI="
       }
     },
     "wasm32": {
       "core": {
-        "js": "./runtime/effindom-core-v2.wasm32.33fOKGHDPWqU63OJp6nbu5ktWHa5UD5ToYOFw1h9tKk.js",
-        "js_integrity": "sha256-33fOKGHDPWqU63OJp6nbu5ktWHa5UD5ToYOFw1h9tKk=",
-        "wasm": "./runtime/effindom-core-v2.wasm32.qNp1sJqfqLQ7VOISPI4rDxT-5h_GMu2LB-bDC8Sf0Vs.wasm",
-        "wasm_integrity": "sha256-qNp1sJqfqLQ7VOISPI4rDxT+5h/GMu2LB+bDC8Sf0Vs="
+        "js": "./runtime/effindom-core-v2.wasm32.MT6WBqB4Og1oa9R0BF98oXo86tUaoqMyXHoZdOWxPXE.js",
+        "js_integrity": "sha256-MT6WBqB4Og1oa9R0BF98oXo86tUaoqMyXHoZdOWxPXE=",
+        "wasm": "./runtime/effindom-core-v2.wasm32.0cBivWBXu_7PwkF2XBCbIOEhfusjFiCekGTMLgbUKjc.wasm",
+        "wasm_integrity": "sha256-0cBivWBXu/7PwkF2XBCbIOEhfusjFiCekGTMLgbUKjc="
       },
       "ui": {
         "js": "./runtime/effindom-ui-v2.wasm32.h1369EzClzCy-M43UivfD8jZnBwe-jADnnw5alXJbdg.js",
         "js_integrity": "sha256-h1369EzClzCy+M43UivfD8jZnBwe+jADnnw5alXJbdg=",
-        "wasm": "./runtime/effindom-ui-v2.wasm32.d9cHWo4rYDSaNbsqV1AGGBGL8bvSrU2IyD0dGyrTmME.wasm",
-        "wasm_integrity": "sha256-d9cHWo4rYDSaNbsqV1AGGBGL8bvSrU2IyD0dGyrTmME="
+        "wasm": "./runtime/effindom-ui-v2.wasm32.YSweCDLBHIicdzjAvLEIhen51p6iyk6YYvYbSnJ8Qyo.wasm",
+        "wasm_integrity": "sha256-YSweCDLBHIicdzjAvLEIhen51p6iyk6YYvYbSnJ8Qyo="
       }
     }
   },
   "assets": {
     "icu": {
-      "url": "./runtime/icudt_minimal.962CX1q0-Nbv-OqXPaub5piYTOLumUk-nEvemcvvnpw.dat",
-      "integrity": "sha256-962CX1q0+Nbv+OqXPaub5piYTOLumUk+nEvemcvvnpw="
+      "url": "./runtime/icudt_minimal.8iFWnpjjgaLEmW5rxxWi3tG-cofQo8WW06mqtVccWg0.dat",
+      "integrity": "sha256-8iFWnpjjgaLEmW5rxxWi3tG+cofQo8WW06mqtVccWg0="
     },
     "fonts": {
       "NotoColorEmoji.ttf": {
@@ -103,5 +103,5 @@
       }
     }
   },
-  "runtime_set_hash": "WgETlWHPI4eF0duQ7FgNpI5GUUfxlPPLdAGjo12VQqI"
+  "runtime_set_hash": "WhkBHLgc3FIfLkv_Q82cCn3OFdY2o2Q8RIPeV0N1dLw"
 }

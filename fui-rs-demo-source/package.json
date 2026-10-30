@@ -19,7 +19,7 @@
     "build:worker-host-services": "esbuild worker-host-services.ts --bundle --format=esm --platform=browser --outfile=public/worker-host-services.js"
   },
   "dependencies": {
-    "@effindomv2/runtime": "0.2.14"
+    "@effindomv2/runtime": "0.3.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
