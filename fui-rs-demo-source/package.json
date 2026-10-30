@@ -8,7 +8,7 @@
     "build:web": "npm run build:assets && npm run build:wasm && npm run build:workers && npm run build:harness && npm run stage:routes",
     "build:wasm": "node scripts/build-route-wasm.mjs --release",
     "build:workers": "node scripts/build-worker-wasm.mjs --release",
-    "build:native": "cargo fui build --release",
+    "build:native": "node scripts/build-native.mjs --release",
     "publish:stage": "node -e \"const fs=require('node:fs');fs.rmSync('published',{recursive:true,force:true});fs.cpSync('public','published',{recursive:true})\"",
     "stage:routes": "node scripts/stage-route-entrypoints.mjs",
     "check:published-routes": "node scripts/stage-route-entrypoints.mjs --check --output=published",

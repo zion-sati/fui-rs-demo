@@ -18,7 +18,7 @@ jobs:
       matrix:
         include:
           - name: macos-arm64
-            os: macos-14
+            os: macos-15
             architecture: arm64
             target: aarch64-apple-darwin
             archive: fui-rs-demo-macos-arm64.zip
