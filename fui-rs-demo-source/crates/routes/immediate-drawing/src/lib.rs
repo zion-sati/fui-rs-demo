@@ -2,14 +2,16 @@ mod widgets;
 
 use fui::prelude::*;
 use fui_rs_demo_shared::design_system::{
-    create_route_chrome, demo_scroll_box, demo_text, panel, vertical_spacer, DemoTextStyle,
-    HEADING_TO_BODY_GAP_PX, PAGE_SECTION_GAP_PX, TITLE_TO_SUPPORTING_GAP_PX,
+    create_route_chrome, demo_scroll_box, demo_text, page_compact_layout, panel, vertical_spacer,
+    CompactLayout, DemoTextStyle, HEADING_TO_BODY_GAP_PX, PAGE_MIN_HEIGHT_PX, PAGE_SECTION_GAP_PX,
+    TITLE_TO_SUPPORTING_GAP_PX,
 };
 use widgets::DrawingGallery;
 
 #[derive(Clone)]
 pub struct ImmediateDrawingPage {
     root: SelectionArea,
+    _layout: CompactLayout,
 }
 
 fui_component!(ImmediateDrawingPage => root);
@@ -31,6 +33,7 @@ impl ImmediateDrawingPage {
             }
         };
         let content_scroll = demo_scroll_box("immediate-drawing-content-scroll");
+        let content_scroll_layout = content_scroll.clone();
         content_scroll.fill_size().child(&gallery_panel);
         let main_panel = ui! {
             panel().fill_size() {
@@ -44,23 +47,34 @@ impl ImmediateDrawingPage {
                 content_scroll,
             }
         };
+        let chrome = create_route_chrome(
+            "Immediate Drawing - FUI-RS Demo",
+            "immediate-drawing",
+            PAGE_SECTION_GAP_PX,
+        );
         let content = ui! {
-            column()
-                .min_width(800.0, Unit::Pixel)
-                .min_height(600.0, Unit::Pixel)
-                .fill_size()
-                .padding(24.0, 24.0, 24.0, 24.0) {
-                    create_route_chrome("Immediate Drawing - FUI-RS Demo", "immediate-drawing", PAGE_SECTION_GAP_PX),
+            column().fill_size() {
+                    chrome.root(),
                     main_panel,
                 }
         };
+        let layout = page_compact_layout(
+            &content,
+            &chrome,
+            Some(&content_scroll_layout),
+            PAGE_MIN_HEIGHT_PX,
+            |_| {},
+        );
         let main_scroll = demo_scroll_box("immediate-drawing-scroll");
         main_scroll.fill_size().child(&content);
         let root = ui! { selection_area().fill_size() { main_scroll } };
         root.bind_theme(|node, theme| {
             node.bg_color(theme.colors.background);
         });
-        Self { root }
+        Self {
+            root,
+            _layout: layout,
+        }
     }
 
     pub fn root(&self) -> SelectionArea {

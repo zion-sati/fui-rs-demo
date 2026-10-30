@@ -167,6 +167,7 @@ impl HomePage {
 
         let bitmap = create_custom_bitmap();
         let controls_scroll = demo_scroll_box("ControlsScrollBox");
+        let controls_scroll_layout = controls_scroll.clone();
         controls_scroll.fill_size().children(children![
             controls_surface,
             vertical_spacer(PANEL_SECTION_GAP_PX),
@@ -209,21 +210,46 @@ impl HomePage {
             vertical_spacer(PANEL_SECTION_GAP_PX),
             controls_scroll,
         }};
+        let chrome = create_route_chrome("Home Page - FUI-RS Demo ✌🏼", "home", PAGE_SECTION_GAP_PX);
+        let column_gap = horizontal_spacer(24.0);
+        let columns = ui! {
+            row()
+                .align_items(AlignItems::Stretch)
+                .fill_height() {
+                    virtual_list_panel.clone(),
+                    column_gap.clone(),
+                    main_panel,
+            }
+        };
         let content = ui! {
-            column()
-            .min_width(800.0, Unit::Pixel)
-                .min_height(600.0, Unit::Pixel)
-                .fill_size()
-                .padding(24.0, 24.0, 24.0, 24.0) {
-                create_route_chrome("Home Page - FUI-RS Demo ✌🏼", "home", PAGE_SECTION_GAP_PX),
-                row()
-                    .align_items(AlignItems::Stretch)
-                    .fill_height() {
-                        virtual_list_panel,
-                        horizontal_spacer(24.0),
-                        main_panel,
-                },
+            column().fill_size() {
+                chrome.root(),
+                columns.clone(),
         }};
+        // The list sits beside the showcase, or above it in the compact layout, where the page is taller so the
+        // showcase keeps a usable height of its own and the page scrolls.
+        let layout = page_compact_layout(
+            &content,
+            &chrome,
+            Some(&controls_scroll_layout),
+            COMPACT_PAGE_MIN_HEIGHT_PX,
+            move |compact| {
+                columns.flex_direction(if compact {
+                    FlexDirection::Column
+                } else {
+                    FlexDirection::Row
+                });
+                if compact {
+                    virtual_list_panel
+                        .fill_width()
+                        .height(COMPACT_LIST_PANEL_HEIGHT_PX, Unit::Pixel);
+                    column_gap.width(0.0, Unit::Pixel).height(12.0, Unit::Pixel);
+                } else {
+                    virtual_list_panel.width(250.0, Unit::Pixel).fill_height();
+                    column_gap.width(24.0, Unit::Pixel).height(0.0, Unit::Auto);
+                }
+            },
+        );
         let root = ui! {
             selection_area()
             .fill_size()
@@ -265,6 +291,7 @@ impl HomePage {
             foundations_last_key: RefCell::new(String::new()),
             clock_subscription: RefCell::new(None),
             _bitmap: bitmap,
+            _layout: layout,
         });
         wire_events(&state, &action_button, &clock);
         state.refresh_foundations_state();

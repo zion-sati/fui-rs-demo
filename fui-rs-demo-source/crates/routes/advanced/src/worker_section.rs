@@ -83,7 +83,7 @@ pub(crate) fn create_worker_section() -> FlexBox {
         section_panel("ProgressBar + Worker Sample") {
             demo_text("This sample connects the Worker API to a retained ProgressBar. Start runs a 5-second prime search with frequent cooperative yields; cancel waits for the next yield and then reports cancellation.", DemoTextStyle::Body),
             vertical_spacer(12.0),
-            row().fill_width().align_items(AlignItems::Stretch) { start, flex_box().width(12.0, Unit::Pixel), cancel },
+            row().fill_width().flex_wrap(FlexWrap::Wrap).align_items(AlignItems::Stretch) { start, flex_box().width(12.0, Unit::Pixel), cancel },
             vertical_spacer(12.0),
             progress,
             vertical_spacer(10.0),

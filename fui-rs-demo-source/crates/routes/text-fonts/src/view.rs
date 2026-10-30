@@ -30,6 +30,7 @@ pub struct TextFontsState {
     syncing_vertical: Cell<bool>,
     syncing_horizontal: Cell<bool>,
     rich_text: RichTextSection,
+    _layout: CompactLayout,
 }
 
 impl TextFontsState {
@@ -41,7 +42,7 @@ impl TextFontsState {
         let text_area_section = TextAreaSection::new();
         let controls = text_area_section.build_panel(&login.form);
         let rich_panel = ui! {
-            panel().width(800.0, Unit::Pixel) {
+            panel().width(800.0, Unit::Pixel).max_width(100.0, Unit::Percent) {
                 demo_text("Static Rich Text", DemoTextStyle::Heading3),
                 vertical_spacer(TITLE_TO_SUPPORTING_GAP_PX),
                 rich_text.container_text,
@@ -51,7 +52,7 @@ impl TextFontsState {
             }
         };
         let font_panel = ui! {
-            panel().width(800.0, Unit::Pixel) {
+            panel().width(800.0, Unit::Pixel).max_width(100.0, Unit::Percent) {
                 demo_text("App-authored Custom Fonts", DemoTextStyle::Heading3),
                 vertical_spacer(TITLE_TO_SUPPORTING_GAP_PX),
                 custom_font.heading_text,
@@ -60,6 +61,10 @@ impl TextFontsState {
                 vertical_spacer(8.0), custom_font.comparison_text,
             }
         };
+        let controls_scroll = demo_scroll_box("AdvancedControlsScrollBox");
+        controls_scroll
+            .fill_size()
+            .children(children![controls, rich_panel, font_panel]);
         let main_panel = ui! {
             panel().fill_size() {
                 demo_text(TextFontsModel::TITLE, DemoTextStyle::Heading2),
@@ -68,23 +73,27 @@ impl TextFontsState {
                 vertical_spacer(HEADING_TO_BODY_GAP_PX),
                 demo_text(TextFontsModel::DESCRIPTION, DemoTextStyle::BodySecondary),
                 vertical_spacer(PAGE_SECTION_GAP_PX),
-                demo_scroll_box("AdvancedControlsScrollBox").fill_size() {
-                    controls,
-                    rich_panel,
-                    font_panel,
-                },
+                controls_scroll.clone(),
             }
         };
+        let chrome = create_route_chrome(
+            "Text & Fonts - FUI-RS Demo 🫶",
+            "text-fonts",
+            PAGE_SECTION_GAP_PX,
+        );
         let content = ui! {
-            column()
-                .fill_size()
-                .min_width(800.0, Unit::Pixel)
-                .min_height(600.0, Unit::Pixel)
-                .padding(24.0, 24.0, 24.0, 24.0) {
-                    create_route_chrome("Text & Fonts - FUI-RS Demo 🫶", "text-fonts", PAGE_SECTION_GAP_PX),
+            column().fill_size() {
+                    chrome.root(),
                     main_panel,
             }
         };
+        let layout = page_compact_layout(
+            &content,
+            &chrome,
+            Some(&controls_scroll),
+            PAGE_MIN_HEIGHT_PX,
+            |_| {},
+        );
         let root = ui! {
             selection_area().fill_size() {
                 demo_scroll_box("mainScrollBox").fill_size() { content },
@@ -113,6 +122,7 @@ impl TextFontsState {
             syncing_vertical: Cell::new(false),
             syncing_horizontal: Cell::new(false),
             rich_text,
+            _layout: layout,
         });
         wire_events(
             &state,

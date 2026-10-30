@@ -9,8 +9,8 @@ use external_drop_demo::ExternalDropDemoPanel;
 use fetch_section::create_fetch_section;
 use fui::prelude::*;
 use fui_rs_demo_shared::design_system::{
-    create_route_chrome, demo_scroll_box, demo_text as styled_text, panel, vertical_spacer,
-    DemoTextStyle, PAGE_SECTION_GAP_PX,
+    create_route_chrome, demo_scroll_box, demo_text as styled_text, page_compact_layout, panel,
+    vertical_spacer, CompactLayout, DemoTextStyle, PAGE_MIN_HEIGHT_PX, PAGE_SECTION_GAP_PX,
 };
 use reorder_demo::ReorderDemoPanel;
 use worker_section::create_worker_section;
@@ -18,6 +18,7 @@ use worker_section::create_worker_section;
 #[derive(Clone)]
 pub struct AdvancedPage {
     root: SelectionArea,
+    _layout: CompactLayout,
 }
 
 fui_component!(AdvancedPage => root);
@@ -43,13 +44,10 @@ impl AdvancedPage {
             .fill_size()
             .scroll_enabled_x(false)
             .child(&sections);
+        let chrome = create_route_chrome("Advanced - FUI-RS Demo", "advanced", 16.0);
         let body = ui! {
-            column()
-                .min_width(800.0, Unit::Pixel)
-                .min_height(600.0, Unit::Pixel)
-                .fill_size()
-                .padding(24.0, 24.0, 24.0, 24.0) {
-                    create_route_chrome("Advanced - FUI-RS Demo", "advanced", 16.0),
+            column().fill_size() {
+                    chrome.root(),
                     panel().fill_size() {
                         styled_text("Advanced", DemoTextStyle::Heading2),
                         vertical_spacer(8.0),
@@ -59,6 +57,8 @@ impl AdvancedPage {
                         vertical_spacer(16.0),
                         content_scroll,
         }}};
+        // The content scroll box never scrolls sideways here, so the layout leaves it alone.
+        let layout = page_compact_layout(&body, &chrome, None, PAGE_MIN_HEIGHT_PX, |_| {});
         let main_scroll = demo_scroll_box("mainScrollBox");
         main_scroll.fill_size().child(&body);
         Self {
@@ -71,6 +71,7 @@ impl AdvancedPage {
                         main_scroll
                 }
             },
+            _layout: layout,
         }
     }
 

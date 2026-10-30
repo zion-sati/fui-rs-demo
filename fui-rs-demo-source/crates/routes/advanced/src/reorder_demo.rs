@@ -315,7 +315,9 @@ impl ReorderDemoPanel {
             compute_reorder_content_height(state.borrow().items.borrow().len() as i32),
         );
 
-        scroll_box.width(600.0, Unit::Pixel);
+        scroll_box
+            .width(600.0, Unit::Pixel)
+            .max_width(100.0, Unit::Percent);
         panel
             .child(&scroll_box)
             .child(&vertical_spacer(12.0))

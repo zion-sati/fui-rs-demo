@@ -39,6 +39,7 @@ impl LoginFormSection {
                 .columns([GridTrack::px(180.0), GridTrack::star(1.0)])
                 .rows([GridTrack::px(40.0), GridTrack::px(12.0), GridTrack::px(40.0)])
                 .width(500.0, Unit::Pixel)
+                .max_width(100.0, Unit::Percent)
         };
         let username_label = ui! {
             demo_text("Username or email:   ", DemoTextStyle::Body)

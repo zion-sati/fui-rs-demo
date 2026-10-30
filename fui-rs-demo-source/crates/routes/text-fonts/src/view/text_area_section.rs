@@ -103,7 +103,7 @@ impl TextAreaSection {
                     DemoTextStyle::BodySecondary,
                 ),
                 vertical_spacer(14.0),
-                ui! { row() {
+                ui! { row().flex_wrap(FlexWrap::Wrap) {
                     ui! { column() {
                         self.read_only_toggle.clone(),
                         vertical_spacer(8.0), self.wrapping_toggle.clone(),

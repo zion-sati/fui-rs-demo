@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use fui::prelude::*;
 
 pub const PAGE_SECTION_GAP_PX: f32 = 24.0;
@@ -108,11 +111,9 @@ pub fn horizontal_spacer(width: f32) -> FlexBox {
 }
 
 pub fn panel() -> FlexBox {
-    ui! {
+    let panel = ui! {
         column()
             .align_items(AlignItems::Start)
-            .padding(24.0, 24.0, 24.0, 24.0)
-            .margin(12.0, 12.0, 12.0, 12.0)
             .corner_radius(16.0)
             .bind_theme(|panel, theme| {
                 panel
@@ -120,7 +121,18 @@ pub fn panel() -> FlexBox {
                     .bg_color(theme.colors.surface)
                     .drop_shadow(theme.colors.panel_shadow, 0.0, 2.0, 7.0, 0.0);
             })
-    }
+    };
+    apply_panel_spacing(&panel, is_compact_layout());
+    NEW_PANELS.with(|panels| panels.borrow_mut().push(panel.clone()));
+    panel
+}
+
+/// Nested panels keep less of a phone's width for their own spacing in the compact layout.
+fn apply_panel_spacing(panel: &FlexBox, compact: bool) {
+    let (padding, margin) = if compact { (14.0, 6.0) } else { (24.0, 12.0) };
+    panel
+        .padding(padding, padding, padding, padding)
+        .margin(margin, margin, margin, margin);
 }
 
 pub fn primary_button(label: impl Into<String>) -> Button {
@@ -189,6 +201,7 @@ pub fn apply_row_background(row: &FlexBox, index: i32, theme: &Theme) {
         .border(1.0, theme.colors.border);
 }
 
+#[cfg(not(feature = "native-runtime"))]
 fn nav_pill(href: &str, label: &str, active: bool) -> NavLink {
     let label_node = text(label);
     label_node.font_size(14.0).selectable(false);
@@ -234,42 +247,153 @@ pub fn demo_nav_link(href: &str, label: &str) -> NavLink {
     link
 }
 
-pub fn create_nav_bar(title: &str, active_slug: &str) -> FlexBox {
-    ui! {
-        row().fill_width().flex_wrap(FlexWrap::Wrap) {
-            demo_text(title, DemoTextStyle::Heading1)
-                .text_vertical_align(TextVerticalAlign::Center)
-                .width(50.0, Unit::Percent),
-            row()
-                .justify_content(JustifyContent::End)
-                .fill_width_percent(50.0)
-                .flex_wrap(FlexWrap::Wrap) {
-                    nav_pill("/", "Home", active_slug == "home"),
-                    horizontal_spacer(10.0),
-                    nav_pill("/text-fonts/", "Text & Fonts", active_slug == "text-fonts"),
-                    horizontal_spacer(10.0),
-                    nav_pill("/advanced/", "Advanced", active_slug == "advanced"),
-                    horizontal_spacer(10.0),
-                    nav_pill("/immediate-drawing/", "Immediate Drawing", active_slug == "immediate-drawing"),
-            },
+/// A viewport narrower than this gets the compact layout: one column, no minimum page width, tighter padding.
+pub const COMPACT_LAYOUT_MAX_WIDTH_PX: f32 = 860.0;
+const PAGE_MIN_WIDTH_PX: f32 = 800.0;
+pub const PAGE_MIN_HEIGHT_PX: f32 = 600.0;
+const NAV_PILL_GAP_PX: f32 = 10.0;
+
+pub fn is_compact_layout() -> bool {
+    let width = viewport_width_signal().value();
+    width > 0.0 && width < COMPACT_LAYOUT_MAX_WIDTH_PX
+}
+
+thread_local! {
+    // The panels built since a page last collected them, so each page lays out its own panels.
+    static NEW_PANELS: RefCell<Vec<FlexBox>> = const { RefCell::new(Vec::new()) };
+}
+
+/// Keeps a page matched to the viewport, wide or compact, for as long as the page holds it.
+#[derive(Clone)]
+pub struct CompactLayout {
+    _subscription: Rc<fui::signal::SubscriptionGuard>,
+}
+
+impl CompactLayout {
+    pub fn new(apply: impl Fn(bool) + 'static) -> Self {
+        apply(is_compact_layout());
+        let subscription = viewport_width_signal().subscribe(move |_| apply(is_compact_layout()));
+        Self {
+            _subscription: Rc::new(subscription),
         }
     }
 }
 
-pub fn create_route_chrome(title: &str, active_slug: &str, bottom_gap: f32) -> FlexBox {
+/// A route's title and links. In the compact layout the links wrap on their own line under the title.
+#[derive(Clone)]
+pub struct RouteChrome {
+    root: FlexBox,
+    nav: Option<(TextNode, FlexBox, Vec<NavLink>)>,
+}
+
+impl RouteChrome {
+    pub fn root(&self) -> FlexBox {
+        self.root.clone()
+    }
+
+    fn apply_layout(&self, compact: bool) {
+        let Some((title, links, pills)) = &self.nav else {
+            return;
+        };
+        title.width(if compact { 100.0 } else { 50.0 }, Unit::Percent);
+        links
+            .fill_width_percent(if compact { 100.0 } else { 50.0 })
+            .justify_content(if compact {
+                JustifyContent::Start
+            } else {
+                JustifyContent::End
+            })
+            .margin(0.0, if compact { 12.0 } else { 0.0 }, 0.0, 0.0);
+        // A gap after each pill, and in the compact layout below it too, so wrapped rows stay apart.
+        for (index, pill) in pills.iter().enumerate() {
+            let right = if index + 1 == pills.len() {
+                0.0
+            } else {
+                NAV_PILL_GAP_PX
+            };
+            pill.margin(0.0, 0.0, right, if compact { NAV_PILL_GAP_PX } else { 0.0 });
+        }
+    }
+}
+
+pub fn create_route_chrome(title: &str, active_slug: &str, bottom_gap: f32) -> RouteChrome {
     #[cfg(feature = "native-runtime")]
     {
         let _ = (title, active_slug, bottom_gap);
-        row().height(0.0, Unit::Pixel).clone()
+        RouteChrome {
+            root: row().height(0.0, Unit::Pixel).clone(),
+            nav: None,
+        }
     }
 
     #[cfg(not(feature = "native-runtime"))]
     {
-        ui! {
+        let title_text = demo_text(title, DemoTextStyle::Heading1);
+        title_text.text_vertical_align(TextVerticalAlign::Center);
+        let pills = vec![
+            nav_pill("/", "Home", active_slug == "home"),
+            nav_pill("/text-fonts/", "Text & Fonts", active_slug == "text-fonts"),
+            nav_pill("/advanced/", "Advanced", active_slug == "advanced"),
+            nav_pill(
+                "/immediate-drawing/",
+                "Immediate Drawing",
+                active_slug == "immediate-drawing",
+            ),
+        ];
+        let links = row().flex_wrap(FlexWrap::Wrap).clone();
+        for pill in &pills {
+            links.child(pill);
+        }
+        let root = ui! {
             column().fill_width() {
-                create_nav_bar(title, active_slug),
+                row().fill_width().flex_wrap(FlexWrap::Wrap) {
+                    title_text.clone(),
+                    links.clone(),
+                },
                 vertical_spacer(bottom_gap),
             }
+        };
+        RouteChrome {
+            root,
+            nav: Some((title_text, links, pills)),
         }
     }
+}
+
+/// Keeps a route page matched to the viewport: `page` is the column under the main scroll box, `content_scroll` the
+/// scroll box in the main panel, which fits the width in the compact layout, and the panels built for the page so far
+/// are collected. A page whose content stacks can ask for more height in the compact layout, so the page scrolls; and
+/// `extra` applies a layout of the page's own.
+pub fn page_compact_layout(
+    page: &FlexBox,
+    chrome: &RouteChrome,
+    content_scroll: Option<&ScrollBox>,
+    compact_min_height: f32,
+    extra: impl Fn(bool) + 'static,
+) -> CompactLayout {
+    let page = page.clone();
+    let chrome = chrome.clone();
+    let content_scroll = content_scroll.cloned();
+    let panels = NEW_PANELS.with(|panels| std::mem::take(&mut *panels.borrow_mut()));
+    CompactLayout::new(move |compact| {
+        let padding = if compact { 12.0 } else { 24.0 };
+        page.min_width(if compact { 0.0 } else { PAGE_MIN_WIDTH_PX }, Unit::Pixel)
+            .min_height(
+                if compact {
+                    compact_min_height
+                } else {
+                    PAGE_MIN_HEIGHT_PX
+                },
+                Unit::Pixel,
+            )
+            .padding(padding, padding, padding, padding);
+        chrome.apply_layout(compact);
+        if let Some(scroll) = &content_scroll {
+            scroll.scroll_enabled_x(!compact);
+        }
+        for panel in &panels {
+            apply_panel_spacing(panel, compact);
+        }
+        extra(compact);
+    })
 }

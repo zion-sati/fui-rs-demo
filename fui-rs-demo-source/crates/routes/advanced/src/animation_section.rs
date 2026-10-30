@@ -131,7 +131,7 @@ pub(crate) fn create_animation_section() -> FlexBox {
             section_panel("Transitions") {
                 preview,
                 vertical_spacer(14.0),
-                row().fill_width().align_items(AlignItems::Stretch) {
+                row().fill_width().flex_wrap(FlexWrap::Wrap).align_items(AlignItems::Stretch) {
                     calm.width(170.0, Unit::Pixel).height(60.0, Unit::Pixel),
                     flex_box().width(12.0, Unit::Pixel),
                     emphasize.width(190.0, Unit::Pixel).height(60.0, Unit::Pixel),
@@ -141,9 +141,9 @@ pub(crate) fn create_animation_section() -> FlexBox {
             },
             vertical_spacer(18.0),
             section_panel("Scroll Surfaces") {
-                panel() { scroller.width(700.0, Unit::Pixel) },
+                panel() { scroller.width(700.0, Unit::Pixel).max_width(100.0, Unit::Percent) },
                 vertical_spacer(14.0),
-                row().fill_width().align_items(AlignItems::Stretch) {
+                row().fill_width().flex_wrap(FlexWrap::Wrap).align_items(AlignItems::Stretch) {
                     scroll_button("Scroll to first sample", 0.0, "Scrolling to first sample...").width(180.0, Unit::Pixel).height(60.0, Unit::Pixel),
                     flex_box().width(12.0, Unit::Pixel),
                     scroll_button("Scroll to 8th sample", 7.0 * ROW_HEIGHT, "Scrolling to 8th sample...").width(190.0, Unit::Pixel).height(60.0, Unit::Pixel),
@@ -151,7 +151,7 @@ pub(crate) fn create_animation_section() -> FlexBox {
                     scroll_button("Scroll to 14th sample", 13.0 * ROW_HEIGHT, "Scrolling to 14th sample...").width(180.0, Unit::Pixel).height(60.0, Unit::Pixel),
                 },
                 vertical_spacer(10.0),
-                row().fill_width() {
+                row().fill_width().flex_wrap(FlexWrap::Wrap) {
                     scroll_button("Scroll to logical tail", ROW_HEIGHT * ROW_COUNT as f32 + LOGICAL_TAIL - 280.0, "Scrolling to logical tail...").width(170.0, Unit::Pixel).height(60.0, Unit::Pixel),
                 },
                 vertical_spacer(10.0),

@@ -13,6 +13,9 @@ use std::rc::Rc;
 const VIRTUAL_LIST_ITEMS: i32 = 100_000;
 const VIRTUAL_LIST_ITEM_HEIGHT: f32 = 62.0;
 const DEMO_BITMAP_SIZE: u32 = 512;
+// In the compact layout the list sits above the showcase at this height, and the page is tall enough for both.
+const COMPACT_LIST_PANEL_HEIGHT_PX: f32 = 320.0;
+const COMPACT_PAGE_MIN_HEIGHT_PX: f32 = 1240.0;
 
 #[derive(Clone)]
 pub struct HomePage {
@@ -55,6 +58,7 @@ struct HomeState {
     foundations_last_key: RefCell<String>,
     clock_subscription: RefCell<Option<AppClockSubscription>>,
     _bitmap: Bitmap,
+    _layout: CompactLayout,
 }
 
 impl HomeState {
@@ -170,7 +174,6 @@ impl HomeState {
         ));
     }
 }
-
 
 use bitmap::*;
 use controls_images::*;
