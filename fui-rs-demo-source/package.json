@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "publish": "npm run build:web && npm run build:native && npm run publish:stage",
-    "build:web": "npm run build:assets && npm run build:wasm && npm run build:workers && npm run build:harness && npm run stage:routes",
+    "generate:host": "npm run generate:host-services && npm run generate:host-events && npm run generate:worker-host-services",
+    "generate:host-services": "tsx ./node_modules/@effindomv2/fui-rs/scripts/generate-host-services.ts host/host-services.ts appHostServices crates/shared/src/generated/host_services.rs fui::host_services",
+    "generate:host-events": "tsx ./node_modules/@effindomv2/fui-rs/scripts/generate-host-events.ts host/host-events.ts appHostEvents crates/shared/src/generated/host_events.rs",
+    "generate:worker-host-services": "tsx ./node_modules/@effindomv2/fui-rs/scripts/generate-host-services.ts host/worker-host-services.ts demoWorkerHostServices crates/worker/src/generated/worker_host_services.rs fui::host_services fui_host_service worker",
+    "build:web": "npm run generate:host && npm run build:assets && npm run build:wasm && npm run build:workers && npm run build:harness && npm run stage:routes",
     "build:wasm": "node scripts/build-route-wasm.mjs --release",
     "build:workers": "node scripts/build-worker-wasm.mjs --release",
     "build:native": "node scripts/build-native.mjs --release",
@@ -22,8 +26,10 @@
     "@effindomv2/runtime": "0.3.0"
   },
   "devDependencies": {
+    "@effindomv2/fui-rs": "0.3.0",
     "@playwright/test": "^1.59.1",
-    "esbuild": "0.28.1"
+    "esbuild": "0.28.1",
+    "tsx": "4.23.15"
   },
   "allowScripts": {
     "esbuild@0.28.1": true,
