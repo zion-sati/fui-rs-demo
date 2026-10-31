@@ -12,8 +12,11 @@ cargo-fui-version = "0.1.12"
 debug = 0
 panic = "abort"
 
+# Every route's WebAssembly downloads before the route starts, so release builds optimize for size and drop the
+# function-name section.
 [profile.release]
-opt-level = 3
+opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
+strip = true
