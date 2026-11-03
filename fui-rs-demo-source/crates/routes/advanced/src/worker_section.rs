@@ -5,10 +5,11 @@ use fui_rs_demo_shared::design_system::{
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub(crate) fn create_worker_section() -> FlexBox {
+/// The worker sample, and how it fits the layout: in the compact layout the progress bar fills its panel.
+pub(crate) fn create_worker_section() -> (FlexBox, impl Fn(bool)) {
     let status = demo_text("", DemoTextStyle::Body);
     let detail = demo_text("", DemoTextStyle::BodySecondary);
-    let progress = ui! { progress_bar().length(320.0).value(0.0) };
+    let progress = ui! { progress_bar().value(0.0) };
     let active = Rc::new(RefCell::new(None::<Worker>));
     let start = ui! { demo_button("Start prime worker", DemoButtonTone::Primary).width(170.0, Unit::Pixel).height(60.0, Unit::Pixel) };
     let cancel = ui! { demo_button("Cancel prime worker", DemoButtonTone::Secondary).width(170.0, Unit::Pixel).height(60.0, Unit::Pixel) };
@@ -85,12 +86,20 @@ pub(crate) fn create_worker_section() -> FlexBox {
             vertical_spacer(12.0),
             row().fill_width().flex_wrap(FlexWrap::Wrap).align_items(AlignItems::Stretch) { start, flex_box().width(12.0, Unit::Pixel), cancel },
             vertical_spacer(12.0),
-            progress,
+            progress.clone(),
             vertical_spacer(10.0),
             status,
             vertical_spacer(6.0),
             detail,
         }
     };
-    section
+    // The progress bar fills its panel in the compact layout.
+    let apply_layout = move |compact: bool| {
+        if compact {
+            progress.fill_length();
+        } else {
+            progress.length(320.0);
+        }
+    };
+    (section, apply_layout)
 }

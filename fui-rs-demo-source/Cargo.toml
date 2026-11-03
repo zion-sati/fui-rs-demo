@@ -3,20 +3,19 @@ members = ["crates/ui", "crates/native", "crates/worker", "crates/shared", "crat
 resolver = "2"
 
 [workspace.dependencies]
-fui-rs = "=0.3.0"
+fui-rs = "=0.4.0"
 
 [workspace.metadata.fui]
-cargo-fui-version = "0.1.12"
+cargo-fui-version = "0.4.0"
 
 [profile.dev]
 debug = 0
 panic = "abort"
 
-# Every route's WebAssembly downloads before the route starts, so release builds optimize for size and drop the
-# function-name section.
+# Every route's WebAssembly downloads before the route starts, so release builds optimize for size; cargo fui build
+# then runs each route and worker through wasm-opt, which strips names after reading the feature list `strip` would drop.
 [profile.release]
 opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
-strip = true

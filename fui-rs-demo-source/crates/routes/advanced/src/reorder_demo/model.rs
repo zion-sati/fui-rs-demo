@@ -1,8 +1,8 @@
 pub(super) const REORDER_DRAG_FORMAT: &str = "application/x-effindom-reorder-item-id";
 pub(super) const REORDER_MARKER_HEIGHT_PX: f32 = 8.0;
 pub(super) const REORDER_ROW_BODY_HEIGHT_PX: f32 = 72.0;
-pub(super) const REORDER_SLOT_HEIGHT_PX: f32 =
-    REORDER_MARKER_HEIGHT_PX + REORDER_ROW_BODY_HEIGHT_PX;
+// Taller in the compact layout, where a phone wraps a row's title and detail onto two lines each.
+pub(super) const REORDER_COMPACT_ROW_BODY_HEIGHT_PX: f32 = 116.0;
 pub(super) const REORDER_END_SLOT_HEIGHT_PX: f32 = 44.0;
 pub(super) const REORDER_VIEWPORT_HEIGHT_PX: f32 = 248.0;
 pub(super) const REORDER_AUTOSCROLL_EDGE_ZONE_PX: f32 = 48.0;
@@ -82,15 +82,24 @@ pub(super) fn find_reorder_item_index(items: &[ReorderDemoItem], item_id: &str) 
         .unwrap_or(-1)
 }
 
-pub(super) fn compute_reorder_content_height(item_count: i32) -> f32 {
+pub(super) fn reorder_row_body_height(compact: bool) -> f32 {
+    if compact {
+        REORDER_COMPACT_ROW_BODY_HEIGHT_PX
+    } else {
+        REORDER_ROW_BODY_HEIGHT_PX
+    }
+}
+
+pub(super) fn compute_reorder_content_height(item_count: i32, row_body_height: f32) -> f32 {
     let clamped = item_count.max(0);
-    (clamped as f32 * REORDER_SLOT_HEIGHT_PX) + REORDER_END_SLOT_HEIGHT_PX
+    (clamped as f32 * (REORDER_MARKER_HEIGHT_PX + row_body_height)) + REORDER_END_SLOT_HEIGHT_PX
 }
 
 pub(super) fn compute_reorder_visible_range(
     item_count: i32,
     offset_y: f32,
     viewport_height: f32,
+    row_body_height: f32,
 ) -> ReorderVisibleRange {
     if item_count <= 0 {
         return ReorderVisibleRange {
@@ -98,7 +107,8 @@ pub(super) fn compute_reorder_visible_range(
             last_visible_index: -1,
         };
     }
-    let mut first_visible_index = (offset_y / REORDER_SLOT_HEIGHT_PX).floor() as i32;
+    let slot_height = REORDER_MARKER_HEIGHT_PX + row_body_height;
+    let mut first_visible_index = (offset_y / slot_height).floor() as i32;
     first_visible_index = first_visible_index.clamp(0, item_count - 1);
     let effective_viewport_height = if viewport_height > 0.0 {
         viewport_height
@@ -106,7 +116,7 @@ pub(super) fn compute_reorder_visible_range(
         REORDER_VIEWPORT_HEIGHT_PX
     };
     let mut last_visible_index =
-        ((offset_y + effective_viewport_height - 1.0) / REORDER_SLOT_HEIGHT_PX).floor() as i32;
+        ((offset_y + effective_viewport_height - 1.0) / slot_height).floor() as i32;
     if last_visible_index < first_visible_index {
         last_visible_index = first_visible_index;
     }
@@ -153,8 +163,12 @@ pub(super) fn move_reorder_item(
     true
 }
 
-pub(super) fn compute_reorder_max_scroll_offset(item_count: i32, viewport_height: f32) -> f32 {
-    (compute_reorder_content_height(item_count) - viewport_height).max(0.0)
+pub(super) fn compute_reorder_max_scroll_offset(
+    item_count: i32,
+    viewport_height: f32,
+    row_body_height: f32,
+) -> f32 {
+    (compute_reorder_content_height(item_count, row_body_height) - viewport_height).max(0.0)
 }
 
 pub(super) fn clamp01(value: f32) -> f32 {
@@ -197,11 +211,13 @@ pub(super) fn compute_next_reorder_auto_scroll_offset(
     delta_y: f32,
     item_count: i32,
     viewport_height: f32,
+    row_body_height: f32,
 ) -> f32 {
     if delta_y == 0.0 {
         return current_offset_y;
     }
-    let max_offset = compute_reorder_max_scroll_offset(item_count, viewport_height);
+    let max_offset =
+        compute_reorder_max_scroll_offset(item_count, viewport_height, row_body_height);
     (current_offset_y + delta_y).clamp(0.0, max_offset)
 }
 

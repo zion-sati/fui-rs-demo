@@ -8,6 +8,6 @@ name = "fui_rs_demo"
 crate-type = ["staticlib"]
 
 [dependencies]
-fui = { package = "fui-rs", version = "=0.3.0" }
+fui = { package = "fui-rs", version = "=0.4.0" }
 fui_rs_demo_ui = { package = "fui-rs-demo-ui", path = "../ui", features = ["native"] }
 fui_rs_demo_worker = { package = "fui-rs-demo-worker", path = "../worker" }

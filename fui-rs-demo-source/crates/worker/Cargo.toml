@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-fui = { package = "fui-rs", version = "=0.3.0", default-features = false, features = ["worker-runtime"] }
+fui = { package = "fui-rs", version = "=0.4.0", default-features = false, features = ["worker-runtime"] }
 
 [features]
 native-runtime = []

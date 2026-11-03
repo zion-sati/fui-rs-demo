@@ -62,6 +62,7 @@ impl TextAreaSection {
                 ])
                 .select_index(0)
                 .width(350.0, Unit::Pixel)
+                .max_width(100.0, Unit::Percent)
         };
         Self {
             text_area,

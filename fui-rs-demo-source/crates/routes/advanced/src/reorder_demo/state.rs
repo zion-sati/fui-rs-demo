@@ -12,6 +12,7 @@ pub(super) struct ReorderDemoState {
     pub(super) end_marker: FlexBox,
     pub(super) end_drop_zone: FlexBox,
     pub(super) rows: Vec<ReorderRowView>,
+    pub(super) row_body_height: Cell<f32>,
     pub(super) items: RefCell<Vec<ReorderDemoItem>>,
     pub(super) active_drag_item_id: RefCell<Option<String>>,
     pub(super) raw_insertion_index: Cell<i32>,

@@ -3,6 +3,7 @@
   "version": 1,
   "application": { "pageZoom": "enabled" },
   "web": {
-    "loading": { "delayMs": 300, "minimumVisibleMs": 300 }
+    "loading": { "delayMs": 300, "minimumVisibleMs": 300 },
+    "devTools": { "domMirror": "on-requested" }
   }
 }

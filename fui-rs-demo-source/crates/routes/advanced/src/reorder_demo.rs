@@ -1,6 +1,8 @@
 use fui::bindings::ui;
 use fui::prelude::*;
-use fui_rs_demo_shared::design_system::{demo_text, section_panel, DemoTextStyle};
+use fui_rs_demo_shared::design_system::{
+    demo_text, is_compact_layout, section_panel, CompactLayout, DemoTextStyle,
+};
 use std::cell::{Cell, RefCell};
 use std::rc::{Rc, Weak};
 
@@ -20,9 +22,10 @@ pub(crate) struct ReorderDemoPanel {
     root: FlexBox,
     _state: Rc<RefCell<ReorderDemoState>>,
     _guards: Rc<Vec<Subscription>>,
+    _layout: CompactLayout,
 }
 
-fui_component!(ReorderDemoPanel => root, owners: [_state, _guards]);
+fui_component!(ReorderDemoPanel => root, owners: [_state, _guards, _layout]);
 
 impl ReorderDemoPanel {
     pub(crate) fn new() -> Self {
@@ -30,7 +33,6 @@ impl ReorderDemoPanel {
         section_panel("Drag-and-drop Reorder")
             .fill_width()
             .semantic_label("Drag-and-drop reorder card")
-            .clip_to_bounds(false)
         };
 
         let order_status_text = demo_text("", DemoTextStyle::Body);
@@ -38,7 +40,7 @@ impl ReorderDemoPanel {
         let viewport_status_text = demo_text("", DemoTextStyle::Body);
         let preview_title_text = demo_text("", DemoTextStyle::Label);
         let preview_detail_text = ui! {
-        demo_text("", DemoTextStyle::BodySecondary).text_limits(-1, 2)
+        demo_text("", DemoTextStyle::BodySecondary).max_lines(2)
         };
         let preview_effect_text = demo_text("", DemoTextStyle::Caption);
 
@@ -99,6 +101,7 @@ impl ReorderDemoPanel {
             flex_box().fill_width().height(44.0, Unit::Pixel)
         };
 
+        let row_body_height = reorder_row_body_height(is_compact_layout());
         let state = Rc::new(RefCell::new(ReorderDemoState {
             root: panel.clone(),
             scroll_box: scroll_box.clone(),
@@ -112,6 +115,7 @@ impl ReorderDemoPanel {
             end_marker: end_marker.clone(),
             end_drop_zone: end_drop_zone.clone(),
             rows: Vec::new(),
+            row_body_height: Cell::new(row_body_height),
             items: RefCell::new(create_reorder_demo_items()),
             active_drag_item_id: RefCell::new(None),
             raw_insertion_index: Cell::new(-1),
@@ -187,13 +191,16 @@ impl ReorderDemoPanel {
 
                 let title_text = demo_text("", DemoTextStyle::Label);
                 let detail_text = ui! {
-                demo_text("", DemoTextStyle::BodySecondary).text_limits(-1, 2)
+                demo_text("", DemoTextStyle::BodySecondary)
+                    .max_lines(2)
+                    .text_overflow(TextOverflow::Ellipsis)
                 };
                 let card = ui! {
                     flex_box().fill_width()
-                    .height(REORDER_ROW_BODY_HEIGHT_PX, Unit::Pixel)
+                    .height(row_body_height, Unit::Pixel)
                     .padding(16.0, 14.0, 16.0, 14.0)
                     .corner_radius(18.0)
+                    .justify_content(JustifyContent::Center)
                     .child(&ui! {
                         row()
                         .fill_width()
@@ -208,9 +215,11 @@ impl ReorderDemoPanel {
                         })
                     })
                 };
+                // Clipped at the card's border, so text a narrow screen wraps onto more lines stays inside the card.
                 let slot = ui! {
                     flex_box().fill_width()
                     .flex_direction(FlexDirection::Column)
+                    .clip_to_bounds(true)
                     .allow_drop(true)
                     .on_drag_enter({
                         let weak = weak.clone();
@@ -312,7 +321,10 @@ impl ReorderDemoPanel {
         scroll_content.child(&end_drop_zone);
         scroll_box.scroll_content_size(
             -1.0,
-            compute_reorder_content_height(state.borrow().items.borrow().len() as i32),
+            compute_reorder_content_height(
+                state.borrow().items.borrow().len() as i32,
+                row_body_height,
+            ),
         );
 
         scroll_box
@@ -367,11 +379,20 @@ impl ReorderDemoPanel {
         ];
 
         state.borrow().sync_all();
+        let layout = CompactLayout::new({
+            let state = Rc::downgrade(&state);
+            move |compact| {
+                if let Some(state) = state.upgrade() {
+                    state.borrow().apply_row_body_height(compact);
+                }
+            }
+        });
 
         Self {
             root: panel,
             _state: state,
             _guards: Rc::new(guards),
+            _layout: layout,
         }
     }
 }
@@ -382,17 +403,22 @@ mod tests {
         compute_next_reorder_auto_scroll_offset, compute_reorder_content_height,
         compute_reorder_edge_insertion_index, compute_reorder_pointer_auto_scroll_delta,
         compute_reorder_visible_range, create_reorder_demo_items, move_reorder_item,
-        normalize_reorder_insertion_index, ReorderDemoPanel, ReorderVisibleRange,
-        REORDER_END_SLOT_HEIGHT_PX, REORDER_SLOT_HEIGHT_PX,
+        normalize_reorder_insertion_index, reorder_row_body_height, ReorderDemoPanel,
+        ReorderVisibleRange, REORDER_END_SLOT_HEIGHT_PX, REORDER_MARKER_HEIGHT_PX,
+        REORDER_ROW_BODY_HEIGHT_PX,
     };
     use std::rc::Rc;
 
     #[test]
     fn reorder_content_height_matches_fui_as_formula() {
-        assert_eq!(
-            compute_reorder_content_height(3),
-            (3.0 * REORDER_SLOT_HEIGHT_PX) + REORDER_END_SLOT_HEIGHT_PX
-        );
+        for compact in [false, true] {
+            let row_body_height = reorder_row_body_height(compact);
+            assert_eq!(
+                compute_reorder_content_height(3, row_body_height),
+                (3.0 * (REORDER_MARKER_HEIGHT_PX + row_body_height)) + REORDER_END_SLOT_HEIGHT_PX
+            );
+        }
+        assert!(reorder_row_body_height(true) > reorder_row_body_height(false));
     }
 
     #[test]
@@ -428,13 +454,14 @@ mod tests {
 
     #[test]
     fn auto_scroll_offset_clamps_to_retained_content_bounds() {
+        let row_body_height = REORDER_ROW_BODY_HEIGHT_PX;
         assert_eq!(
-            compute_next_reorder_auto_scroll_offset(0.0, -20.0, 8, 240.0),
+            compute_next_reorder_auto_scroll_offset(0.0, -20.0, 8, 240.0, row_body_height),
             0.0
         );
-        let maximum = compute_reorder_content_height(8) - 240.0;
+        let maximum = compute_reorder_content_height(8, row_body_height) - 240.0;
         assert_eq!(
-            compute_next_reorder_auto_scroll_offset(maximum, 20.0, 8, 240.0),
+            compute_next_reorder_auto_scroll_offset(maximum, 20.0, 8, 240.0, row_body_height),
             maximum
         );
     }
@@ -452,7 +479,7 @@ mod tests {
 
     #[test]
     fn visible_range_clamps_to_item_bounds() {
-        let range = compute_reorder_visible_range(8, 9999.0, 100.0);
+        let range = compute_reorder_visible_range(8, 9999.0, 100.0, REORDER_ROW_BODY_HEIGHT_PX);
         assert_eq!(range.first_visible_index, 7);
         assert_eq!(range.last_visible_index, 7);
     }

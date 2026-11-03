@@ -19,11 +19,13 @@ impl ReorderDemoState {
                 state.read_viewport_height(),
             )
         };
+        let row_body_height = owner.borrow().row_body_height.get();
         let next_offset = compute_next_reorder_auto_scroll_offset(
             current_offset,
             delta_y,
             item_count,
             viewport_height,
+            row_body_height,
         );
         if next_offset == current_offset {
             owner.borrow().stop_auto_scroll();
@@ -76,7 +78,25 @@ impl ReorderDemoState {
             self.items.borrow().len() as i32,
             self.scroll_box.scroll_state().offset_y(),
             self.read_viewport_height(),
+            self.row_body_height.get(),
         )
+    }
+
+    /// Rows are taller in the compact layout, where a phone wraps their text.
+    pub(super) fn apply_row_body_height(&self, compact: bool) {
+        let height = reorder_row_body_height(compact);
+        if height == self.row_body_height.get() {
+            return;
+        }
+        self.row_body_height.set(height);
+        for row in &self.rows {
+            row.card.height(height, Unit::Pixel);
+        }
+        self.scroll_box.scroll_content_size(
+            -1.0,
+            compute_reorder_content_height(self.items.borrow().len() as i32, height),
+        );
+        self.sync_viewport_status();
     }
 
     pub(super) fn read_viewport_height(&self) -> f32 {

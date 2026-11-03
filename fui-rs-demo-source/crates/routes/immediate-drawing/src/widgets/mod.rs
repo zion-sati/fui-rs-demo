@@ -11,10 +11,12 @@ mod waveform;
 use bar_chart::BarChart;
 use dancing_yarn::DancingYarn;
 use fui::prelude::*;
+use fui_rs_demo_shared::design_system::COMPACT_SAMPLE_WIDTH_PX;
 use gauge::Gauge;
 use paint_canvas::PaintCanvas;
 use pie_chart::PieChart;
 use scatter_plot::ScatterPlot;
+use shared::{resize_surfaces, SURFACE_SIZE_PX};
 use sparkline::Sparkline;
 use std::cell::Cell;
 use std::rc::{Rc, Weak};
@@ -23,10 +25,10 @@ use waveform::Waveform;
 #[derive(Clone)]
 pub struct DrawingGallery {
     root: FlexBox,
-    _state: Rc<DemoState>,
+    state: Rc<DemoState>,
 }
 
-fui_component!(DrawingGallery => root, owner: _state);
+fui_component!(DrawingGallery => root, owner: state);
 
 impl DrawingGallery {
     pub fn new() -> Self {
@@ -77,14 +79,20 @@ impl DrawingGallery {
             pie,
             scatter,
             yarn,
-            _paint_canvas: paint_canvas,
+            paint_canvas,
         });
         let weak = Rc::downgrade(&state);
         on_loaded(move |_| schedule_tick(weak));
-        Self {
-            root,
-            _state: state,
-        }
+        Self { root, state }
+    }
+
+    /// The surfaces fit a phone in the compact layout.
+    pub fn apply_layout(&self, compact: bool) {
+        self.state.resize(if compact {
+            COMPACT_SAMPLE_WIDTH_PX
+        } else {
+            SURFACE_SIZE_PX
+        });
     }
 }
 
@@ -98,10 +106,24 @@ struct DemoState {
     pie: PieChart,
     scatter: ScatterPlot,
     yarn: DancingYarn,
-    _paint_canvas: PaintCanvas,
+    paint_canvas: PaintCanvas,
 }
 
 impl DemoState {
+    fn resize(&self, size: f32) {
+        let nodes = [
+            self.gauge.node(),
+            self.chart.node(),
+            self.wave.node(),
+            self.spark.node(),
+            self.pie.node(),
+            self.scatter.node(),
+            self.yarn.node(),
+            self.paint_canvas.node(),
+        ];
+        resize_surfaces(&nodes, size);
+    }
+
     fn tick(&self) {
         let mut value = self.gauge_value.get() + self.gauge_direction.get() * 2.0;
         if value >= 100.0 {

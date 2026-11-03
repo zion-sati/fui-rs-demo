@@ -136,7 +136,7 @@ fn reflected(mut value: f32, mut direction: f32) -> (f32, f32) {
 }
 
 fn draw_yarn(ctx: &DrawContext, state: &YarnState, title: &TextLayout) {
-    let size = 300.0;
+    let size = surface_size();
     let center_x = size / 2.0;
     let center_y = size / 2.0 + 8.0;
     let pointer_bias_y = (state.pointer_x / size - 0.5) * 1.7 * state.pull;

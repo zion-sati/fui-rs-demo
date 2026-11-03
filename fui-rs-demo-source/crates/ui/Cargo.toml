@@ -16,7 +16,7 @@ native = [
 ]
 
 [dependencies]
-fui = { package = "fui-rs", version = "=0.3.0" }
+fui = { package = "fui-rs", version = "=0.4.0" }
 fui-rs-demo-home = { path = "../routes/home" }
 fui-rs-demo-text-fonts = { path = "../routes/text-fonts" }
 fui-rs-demo-advanced = { path = "../routes/advanced" }

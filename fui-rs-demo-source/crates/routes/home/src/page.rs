@@ -4,7 +4,7 @@ fn debug_shortcut_label() -> &'static str {
     match platform::platform_family() {
         platform::PlatformFamily::Apple => "Cmd+Shift+F12",
         platform::PlatformFamily::Windows => "Win+Shift+F12",
-        platform::PlatformFamily::Linux => "Super+Shift+F12",
+        platform::PlatformFamily::Linux => "Meta+Shift+F12",
         platform::PlatformFamily::Unknown => "Meta+Shift+F12",
     }
 }
@@ -51,8 +51,14 @@ impl HomePage {
             .min(0.0)
             .max(100.0)
             .step(5.0)
-            .length(300.0)
         };
+        // The compact layout makes this column, and the slider in it, fill the room the vertical slider leaves.
+        let horizontal_slider_column = ui! {
+            column() {
+                demo_text("Horizontal", DemoTextStyle::BodySecondary),
+                vertical_spacer(MICRO_STACK_GAP_PX),
+                horizontal_slider.clone(),
+        }};
         let vertical_slider = ui! {
             demo_slider(65.0)
             .min(0.0)
@@ -131,12 +137,8 @@ impl HomePage {
             vertical_spacer(HEADING_TO_BODY_GAP_PX),
             demo_text("Sliders", DemoTextStyle::Label),
             vertical_spacer(LABEL_TO_CONTROL_GAP_PX),
-            row().align_items(AlignItems::Stretch) {
-                column() {
-                    demo_text("Horizontal", DemoTextStyle::BodySecondary),
-                    vertical_spacer(MICRO_STACK_GAP_PX),
-                    horizontal_slider,
-                },
+            row().align_items(AlignItems::Stretch).flex_wrap(FlexWrap::Wrap) {
+                horizontal_slider_column.clone(),
                 horizontal_spacer(16.0),
                 column() {
                     demo_text("Vertical", DemoTextStyle::BodySecondary),
@@ -166,14 +168,16 @@ impl HomePage {
         }};
 
         let bitmap = create_custom_bitmap();
+        let (images_panel, images_layout) = create_controls_images_panel(&bitmap);
+        let (nested_scroll_panel, nested_scroll_layout) = create_nested_scroll_panel();
         let controls_scroll = demo_scroll_box("ControlsScrollBox");
         let controls_scroll_layout = controls_scroll.clone();
         controls_scroll.fill_size().children(children![
             controls_surface,
             vertical_spacer(PANEL_SECTION_GAP_PX),
-            create_controls_images_panel(&bitmap),
+            images_panel,
             vertical_spacer(PANEL_SECTION_GAP_PX),
-            create_nested_scroll_panel(),
+            nested_scroll_panel,
             vertical_spacer(PANEL_SECTION_GAP_PX),
             control_foundations,
         ]);
@@ -228,6 +232,8 @@ impl HomePage {
         }};
         // The list sits beside the showcase, or above it in the compact layout, where the page is taller so the
         // showcase keeps a usable height of its own and the page scrolls.
+        let slider_layout = horizontal_slider.clone();
+        let slider_column_layout = horizontal_slider_column.clone();
         let layout = page_compact_layout(
             &content,
             &chrome,
@@ -248,6 +254,15 @@ impl HomePage {
                     virtual_list_panel.width(250.0, Unit::Pixel).fill_height();
                     column_gap.width(24.0, Unit::Pixel).height(0.0, Unit::Auto);
                 }
+                if compact {
+                    slider_column_layout.fill_width();
+                    slider_layout.fill_length();
+                } else {
+                    slider_column_layout.width(0.0, Unit::Auto);
+                    slider_layout.length(300.0);
+                }
+                images_layout(compact);
+                nested_scroll_layout(compact);
             },
         );
         let root = ui! {

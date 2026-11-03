@@ -38,9 +38,10 @@ impl ExternalDropDemoPanel {
         let drop_target = ui! {
             flex_box()
             .fill_width()
-            .height(156.0, Unit::Pixel)
+            .min_height(156.0, Unit::Pixel)
             .padding(18.0, 18.0, 18.0, 18.0)
             .corner_radius(20.0)
+            .clip_to_bounds(true)
             .allow_external_drop(true)
             .semantic_label("External file drop target")
             .child(&ui! {

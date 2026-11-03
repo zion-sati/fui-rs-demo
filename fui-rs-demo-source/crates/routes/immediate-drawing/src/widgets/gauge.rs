@@ -17,7 +17,7 @@ impl Gauge {
             let value = value.clone();
             let title = title.clone();
             move |ctx| {
-                let size = 300.0;
+                let size = surface_size();
                 let center = size / 2.0;
                 ctx.draw_round_rect(0.0, 0.0, size, size, 12.0, 12.0, Paint::fill(CARD));
                 draw_plot_title(ctx, &title);

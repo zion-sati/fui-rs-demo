@@ -21,7 +21,7 @@ pub(super) struct PaintCanvas {
 impl PaintCanvas {
     pub(super) fn new(theme: &Theme) -> Self {
         let bitmap_scale: f32 = device_pixel_ratio().max(1.0);
-        let backing_size = (300.0_f32 * bitmap_scale).ceil().max(1.0) as u32;
+        let backing_size = (SURFACE_SIZE_PX * bitmap_scale).ceil().max(1.0) as u32;
         let bitmap = Bitmap::new(backing_size, backing_size);
         bitmap.commit();
         let state = Rc::new(RefCell::new(PaintState {
@@ -122,9 +122,11 @@ impl PaintCanvas {
 }
 
 fn brush_at_logical(state: &mut PaintState, x: f32, y: f32, radius: f32, color: u32) {
-    let center_x = (x * state.bitmap_scale).round() as i32;
-    let center_y = (y * state.bitmap_scale).round() as i32;
-    let radius = (radius * state.bitmap_scale).round().max(1.0) as i32;
+    // The bitmap keeps its full-size resolution when the canvas is drawn smaller.
+    let scale = state.bitmap.width() as f32 / surface_size();
+    let center_x = (x * scale).round() as i32;
+    let center_y = (y * scale).round() as i32;
+    let radius = (radius * scale).round().max(1.0) as i32;
     let width = state.bitmap.width() as i32;
     let height = state.bitmap.height() as i32;
     let mut pixels = state.bitmap.pixels();
@@ -148,7 +150,7 @@ fn brush_at_logical(state: &mut PaintState, x: f32, y: f32, radius: f32, color: 
 }
 
 fn draw_paint_canvas(ctx: &mut DrawContext, state: &mut PaintState) {
-    let size = 300.0;
+    let size = surface_size();
     ctx.draw_round_rect(0.0, 0.0, size, size, 12.0, 12.0, Paint::fill(CARD));
     ctx.draw_image(state.bitmap.texture_id(), 0.0, 0.0, size, size);
     if !state.hint_baked {

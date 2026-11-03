@@ -576,7 +576,7 @@ function assertCompatibleAbi(runtime) {
     return;
   }
   throw new Error(
-    `EffinDom ABI mismatch: fui-as expects core ABI ${String(EXPECTED_EFFINDOM_CORE_ABI_VERSION)} and ui ABI ${String(EXPECTED_EFFINDOM_UI_ABI_VERSION)}, but loaded core ABI ${String(actualCoreVersion)} and ui ABI ${String(actualUiVersion)}. Rebuild/publish @effindomv2/runtime and @effindomv2/fui-as together.`
+    `EffinDOM ABI mismatch: the harness expects core ABI ${String(EXPECTED_EFFINDOM_CORE_ABI_VERSION)} and UI ABI ${String(EXPECTED_EFFINDOM_UI_ABI_VERSION)}, but loaded core ABI ${String(actualCoreVersion)} and UI ABI ${String(actualUiVersion)}. Serve the harness and the core and UI WebAssembly from the same EffinDOM runtime release.`
   );
 }
 
@@ -1507,7 +1507,7 @@ function writeTextPartsPayload(session, values, context) {
     totalBytes += measureLengthPrefixedText(encoded);
   }
   if (totalBytes > session.textBufferSize) {
-    throw new Error(`${context} exceeds the shared AssemblyScript text buffer.`);
+    throw new Error(`${context} exceeds the shared text buffer.`);
   }
   const dataView = new DataView(session.memory.buffer, session.textBufferPtr, totalBytes);
   let byteOffset = 0;
@@ -1666,7 +1666,7 @@ function writeFileListPayload(session, files) {
     totalBytes += measureLengthPrefixedText2(encodedId) + 8 + 8 + measureLengthPrefixedText2(encodedName) + measureLengthPrefixedText2(encodedMimeType);
   }
   if (totalBytes > session.textBufferSize) {
-    throw new Error("File picker payload exceeds the shared AssemblyScript text buffer.");
+    throw new Error("File picker payload exceeds the shared text buffer.");
   }
   const dataView = new DataView(session.memory.buffer, session.textBufferPtr, totalBytes);
   let byteOffset = 0;
@@ -1688,7 +1688,7 @@ function writeWriterPayload(session, mode, first, second = null) {
   const encodedSecond = second === null ? null : encodeLengthPrefixedText2(second);
   const totalBytes = 4 + measureLengthPrefixedText2(encodedFirst) + (encodedSecond === null ? 0 : measureLengthPrefixedText2(encodedSecond));
   if (totalBytes > session.textBufferSize) {
-    throw new Error("File bridge metadata exceeds the shared AssemblyScript text buffer.");
+    throw new Error("File bridge metadata exceeds the shared text buffer.");
   }
   const dataView = new DataView(session.memory.buffer, session.textBufferPtr, totalBytes);
   let byteOffset = 0;
@@ -1711,7 +1711,7 @@ function writeExternalDropPayload(session, items) {
     totalBytes += 4 + 8 + 4 + encodedId.length + 4 + encodedName.length + 4 + encodedMimeType.length;
   }
   if (totalBytes > session.textBufferSize) {
-    throw new Error("External drop payload exceeds the shared AssemblyScript text buffer.");
+    throw new Error("External drop payload exceeds the shared text buffer.");
   }
   const dataView = new DataView(session.memory.buffer, session.textBufferPtr, totalBytes);
   let byteOffset = 0;
@@ -1847,7 +1847,7 @@ function createManagedHarnessFileHost(dependencies) {
     if (status === FILE_STATUS_SUCCESS) {
       payloadLength = bytes?.length ?? 0;
       if (payloadLength > session.textBufferSize) {
-        throw new Error("File read result exceeds the shared AssemblyScript text buffer.");
+        throw new Error("File read result exceeds the shared text buffer.");
       }
       if (payloadLength > 0 && bytes !== null) {
         new Uint8Array(session.memory.buffer, session.textBufferPtr, payloadLength).set(bytes);
@@ -3389,7 +3389,7 @@ var TextSessionBridge = class {
   writeTextCallbackPayload(session, text, context) {
     const encoded = encoder4.encode(text);
     if (encoded.length > session.textBufferSize) {
-      throw new Error(`${context} exceeds the shared AssemblyScript text buffer.`);
+      throw new Error(`${context} exceeds the shared text buffer.`);
     }
     if (encoded.length > 0) {
       const memory = new Uint8Array(this.getCurrentMemory().buffer, session.textBufferPtr, encoded.length);
@@ -4670,7 +4670,7 @@ function startManagedHarness(options) {
   ) ?? null;
   let activeAppLoadingOperation = null;
   window.addEventListener("effindom-loading-progress", (event) => {
-    const operation = activeAppLoadingOperation;
+    const operation = activeAppLoadingOperation ?? startupLoadingOperation;
     if (operation === null || loadingController === null || !(event instanceof CustomEvent)) {
       return;
     }
@@ -4917,7 +4917,7 @@ function startManagedHarness(options) {
       }
       const encoded = encoder5.encode(route);
       if (encoded.length > session.textBufferSize) {
-        throw new Error("Route text exceeds the shared AssemblyScript text buffer.");
+        throw new Error("Route text exceeds the shared text buffer.");
       }
       if (encoded.length > 0) {
         const memory = new Uint8Array(session.memory.buffer, session.textBufferPtr, encoded.length);
@@ -5070,7 +5070,7 @@ function startManagedHarness(options) {
           const encoded = encoder5.encode(arg);
           if (encoded.length > 0) {
             if (session.textBufferPtr === 0 || byteOffset + encoded.length > session.textBufferSize) {
-              throw new Error(`${context} exceeds the shared AssemblyScript text buffer.`);
+              throw new Error(`${context} exceeds the shared text buffer.`);
             }
             const memory = new Uint8Array(session.memory.buffer, session.textBufferPtr + byteOffset, encoded.length);
             memory.set(encoded);
@@ -5086,7 +5086,7 @@ function startManagedHarness(options) {
           if (payload.bytes.length > 0) {
             const alignedOffset = alignOffset(byteOffset, payload.alignment);
             if (session.textBufferPtr === 0 || alignedOffset + payload.bytes.length > session.textBufferSize) {
-              throw new Error(`${context} exceeds the shared AssemblyScript text buffer.`);
+              throw new Error(`${context} exceeds the shared text buffer.`);
             }
             const memory = new Uint8Array(session.memory.buffer, session.textBufferPtr + alignedOffset, payload.bytes.length);
             memory.set(payload.bytes);
@@ -5451,7 +5451,7 @@ function startManagedHarness(options) {
         if (!missingWheelExportLogged) {
           missingWheelExportLogged = true;
           console.error(
-            "[fui_host] AssemblyScript app does not export __fui_on_wheel_event; rebuild the app with the current @effindomv2/fui-as exports."
+            "[fui_host] The application does not export __fui_on_wheel_event; rebuild it with the SDK release that matches this runtime."
           );
         }
         return previousHandled;
@@ -5893,7 +5893,7 @@ function startManagedHarness(options) {
         }
         const encoded = encoder5.encode(key);
         if (encoded.length > 256) {
-          throw new Error("Debug key event exceeds the shared AssemblyScript key buffer.");
+          throw new Error("Debug key event exceeds the shared key buffer.");
         }
         const memory = new Uint8Array(session.memory.buffer, session.keyBufferPtr, encoded.length);
         memory.set(encoded);
@@ -5997,7 +5997,10 @@ function startManagedHarness(options) {
       return runtime;
     }
     async function loadApp(loadOptions) {
-      const loadingOperation = beginAppLoading(loadOptions.showLoadingOverlay !== false, `Loading ${loadOptions.wasmPath}`);
+      const loadingOperation = beginAppLoading(
+        loadOptions.showLoadingOverlay !== false,
+        loadOptions.loadingDetail ?? `Loading ${loadOptions.wasmPath}`
+      );
       if (loadOptions.recreateRuntimeBeforeLoad === true) {
         await recreateRuntime();
       } else {
@@ -6221,7 +6224,8 @@ function startRoutedHarness(config) {
       ...appOptionsBase,
       ...config.hostEvents === void 0 ? {} : { hostEvents: config.hostEvents },
       ...config.hostServices === void 0 ? {} : { hostServices: config.hostServices },
-      ...config.workerHostServices === void 0 ? {} : { workerHostServices: config.workerHostServices }
+      ...config.workerHostServices === void 0 ? {} : { workerHostServices: config.workerHostServices },
+      ...route.loadingDetail === void 0 ? {} : { loadingDetail: route.loadingDetail }
     };
     const showLoadingOverlay = config.showLoadingOverlay?.(isWarmRouteSwap, route);
     appOptions.showLoadingOverlay = showLoadingOverlay ?? true;

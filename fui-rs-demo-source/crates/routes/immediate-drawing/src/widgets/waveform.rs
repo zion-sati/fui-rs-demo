@@ -19,7 +19,7 @@ impl Waveform {
             let values = values.clone();
             let title = title.clone();
             move |ctx| {
-                let size = 300.0;
+                let size = surface_size();
                 let pad = 14.0;
                 let middle = size / 2.0;
                 let amplitude = size * 0.33;

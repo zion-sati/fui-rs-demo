@@ -111,10 +111,12 @@ pub fn horizontal_spacer(width: f32) -> FlexBox {
 }
 
 pub fn panel() -> FlexBox {
+    // Content wider than a phone (images, fixed-width samples) is cut at the padding rather than drawn over the border.
     let panel = ui! {
         column()
             .align_items(AlignItems::Start)
             .corner_radius(16.0)
+            .clip_to_bounds(true)
             .bind_theme(|panel, theme| {
                 panel
                     .border(1.0, theme.colors.border)
@@ -249,6 +251,9 @@ pub fn demo_nav_link(href: &str, label: &str) -> NavLink {
 
 /// A viewport narrower than this gets the compact layout: one column, no minimum page width, tighter padding.
 pub const COMPACT_LAYOUT_MAX_WIDTH_PX: f32 = 860.0;
+/// The widest a fixed-size sample (an image, a drawing surface, a progress bar) gets in the compact layout: it fits
+/// inside nested panels on a 360-pixel phone.
+pub const COMPACT_SAMPLE_WIDTH_PX: f32 = 240.0;
 const PAGE_MIN_WIDTH_PX: f32 = 800.0;
 pub const PAGE_MIN_HEIGHT_PX: f32 = 600.0;
 const NAV_PILL_GAP_PX: f32 = 10.0;

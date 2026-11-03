@@ -1,11 +1,11 @@
 use super::*;
-pub(super) fn create_nested_scroll_panel() -> FlexBox {
+/// The nested scroll panel, and how it fits the layout: in the compact layout the scroll box takes its panel's width.
+pub(super) fn create_nested_scroll_panel() -> (FlexBox, impl Fn(bool)) {
     let scroll = demo_scroll_box("Nested ScrollBox");
     scroll
         .horizontal_scrollbar_visibility(ScrollBarVisibility::Always)
         .vertical_scrollbar_visibility(ScrollBarVisibility::Always)
         .scrollbar_gutter(8.0)
-        .width(300.0, Unit::Pixel)
         .height(240.0, Unit::Pixel)
         .children(children![
             ui! {
@@ -20,13 +20,26 @@ pub(super) fn create_nested_scroll_panel() -> FlexBox {
                 }
             }
         ]);
-    ui! {
+    let scroll_panel = ui! { panel() { scroll.clone() } };
+    let panel = ui! {
         panel() {
             demo_text("Nested ScrollBox", DemoTextStyle::Heading3),
             vertical_spacer(PANEL_SECTION_GAP_PX),
-            panel().width(360.0, Unit::Pixel) {
-                scroll,
-            },
+            scroll_panel.clone(),
         }
-    }
+    };
+    let apply_layout = move |compact: bool| {
+        if compact {
+            scroll_panel
+                .width(0.0, Unit::Auto)
+                .align_self(AlignSelf::Stretch);
+            scroll.fill_width();
+        } else {
+            scroll_panel
+                .width(360.0, Unit::Pixel)
+                .align_self(AlignSelf::Auto);
+            scroll.width(300.0, Unit::Pixel);
+        }
+    };
+    (panel, apply_layout)
 }

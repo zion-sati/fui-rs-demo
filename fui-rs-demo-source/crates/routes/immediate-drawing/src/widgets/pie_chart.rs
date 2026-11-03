@@ -24,7 +24,7 @@ impl PieChart {
             let values = values.clone();
             let title = title.clone();
             move |ctx| {
-                let size = 300.0;
+                let size = surface_size();
                 let center = size / 2.0;
                 let radius = size * 0.4;
                 ctx.draw_round_rect(0.0, 0.0, size, size, 12.0, 12.0, Paint::fill(CARD));

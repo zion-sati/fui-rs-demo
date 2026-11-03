@@ -11,9 +11,10 @@ pub(crate) fn create_animation_section() -> FlexBox {
     let preview = ui! {
         flex_box()
             .fill_width()
-            .height(128.0, Unit::Pixel)
+            .min_height(128.0, Unit::Pixel)
             .padding(18.0, 18.0, 18.0, 18.0)
             .corner_radius(20.0)
+            .clip_to_bounds(true)
             .transitions(Some(
                 NodeTransitions::new()
                     .bg_color(AnimationTiming::with_easing(1000.0, Easings::cubic_out()))
@@ -80,11 +81,15 @@ pub(crate) fn create_animation_section() -> FlexBox {
                 .height(ROW_HEIGHT, Unit::Pixel)
                 .padding(16.0, 12.0, 16.0, 12.0)
                 .corner_radius(14.0)
+                .clip_to_bounds(true)
                 .semantic_label(format!("Animation sample row {}", index + 1)) {
                     column().fill_width() {
                         demo_text(format!("Animation sample row {}", index + 1), DemoTextStyle::Body),
                         vertical_spacer(4.0),
-                        demo_text(detail, DemoTextStyle::BodySecondary),
+                        // One line, so a phone's narrower row keeps the fixed height the scroll targets count in.
+                        demo_text(detail, DemoTextStyle::BodySecondary)
+                            .max_lines(1)
+                            .text_overflow(TextOverflow::Ellipsis),
                     },
             }
         };

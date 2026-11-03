@@ -26,11 +26,12 @@ fui_component!(AdvancedPage => root);
 impl AdvancedPage {
     pub fn new() -> Self {
         use_system_theme();
+        let (worker_section, worker_layout) = create_worker_section();
         let sections = ui! {
             column().fill_width() {
                 create_animation_section(),
                 vertical_spacer(PAGE_SECTION_GAP_PX),
-                create_worker_section(),
+                worker_section,
                 vertical_spacer(PAGE_SECTION_GAP_PX),
                 create_fetch_section(),
                 vertical_spacer(PAGE_SECTION_GAP_PX),
@@ -58,7 +59,7 @@ impl AdvancedPage {
                         content_scroll,
         }}};
         // The content scroll box never scrolls sideways here, so the layout leaves it alone.
-        let layout = page_compact_layout(&body, &chrome, None, PAGE_MIN_HEIGHT_PX, |_| {});
+        let layout = page_compact_layout(&body, &chrome, None, PAGE_MIN_HEIGHT_PX, worker_layout);
         let main_scroll = demo_scroll_box("mainScrollBox");
         main_scroll.fill_size().child(&body);
         Self {

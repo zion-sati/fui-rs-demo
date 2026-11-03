@@ -20,6 +20,7 @@ impl ImmediateDrawingPage {
     pub fn new() -> Self {
         use_system_theme();
         let gallery = DrawingGallery::new();
+        let gallery_layout = gallery.clone();
         let gallery_panel = ui! {
             panel().fill_width() {
                 demo_text("Live drawing surfaces", DemoTextStyle::Heading3),
@@ -63,7 +64,7 @@ impl ImmediateDrawingPage {
             &chrome,
             Some(&content_scroll_layout),
             PAGE_MIN_HEIGHT_PX,
-            |_| {},
+            move |compact| gallery_layout.apply_layout(compact),
         );
         let main_scroll = demo_scroll_box("immediate-drawing-scroll");
         main_scroll.fill_size().child(&content);

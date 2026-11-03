@@ -33,7 +33,7 @@ impl BarChart {
             let title = title.clone();
             let labels = labels.clone();
             move |ctx| {
-                let size = 300.0;
+                let size = surface_size();
                 let pad = 14.0;
                 let bar_width = 48.0;
                 let gap = 16.0;
