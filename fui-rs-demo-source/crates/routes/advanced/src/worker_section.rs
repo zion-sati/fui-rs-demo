@@ -11,8 +11,8 @@ pub(crate) fn create_worker_section() -> (FlexBox, impl Fn(bool)) {
     let detail = demo_text("", DemoTextStyle::BodySecondary);
     let progress = ui! { progress_bar().value(0.0) };
     let active = Rc::new(RefCell::new(None::<Worker>));
-    let start = ui! { demo_button("Start prime worker", DemoButtonTone::Primary).width(170.0, Unit::Pixel).height(60.0, Unit::Pixel) };
-    let cancel = ui! { demo_button("Cancel prime worker", DemoButtonTone::Secondary).width(170.0, Unit::Pixel).height(60.0, Unit::Pixel) };
+    let start = ui! { demo_button("Start prime worker", DemoButtonTone::Primary).min_width(170.0, Unit::Pixel).min_height(60.0, Unit::Pixel) };
+    let cancel = ui! { demo_button("Cancel prime worker", DemoButtonTone::Secondary).min_width(170.0, Unit::Pixel).min_height(60.0, Unit::Pixel) };
     start.on_click({
         let active = active.clone();
         let status = status.clone();

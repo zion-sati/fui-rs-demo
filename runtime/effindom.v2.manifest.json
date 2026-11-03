@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "manifest_hash": "OkcNpT_Nb3DccS_dn2DMAdtdJP0uJVriC-YqlqK0ZVo",
+  "manifest_hash": "Cay06VLYa7OjvI0NJ6gvfCMsiDXaQdW0qMS8AMD9OzM",
   "architectures": {
     "wasm64-simd": {
       "core": {
@@ -10,10 +10,10 @@
         "wasm_integrity": "sha256-MlYwKKARf8SpX1XQBk/E7gNBQ8fe8oAGLuxziRntE4I="
       },
       "ui": {
-        "js": "./runtime/effindom-ui-v2.wasm64-simd.Lp4TryH-eQQ2LCglJu_R02yao7m-cTpecWnHbHatCNw.js",
-        "js_integrity": "sha256-Lp4TryH+eQQ2LCglJu/R02yao7m+cTpecWnHbHatCNw=",
-        "wasm": "./runtime/effindom-ui-v2.wasm64-simd.GbJ62Zp6fQjmU7UkyRSR6m734xKsSVClQyalR8IrIpo.wasm",
-        "wasm_integrity": "sha256-GbJ62Zp6fQjmU7UkyRSR6m734xKsSVClQyalR8IrIpo="
+        "js": "./runtime/effindom-ui-v2.wasm64-simd.XwYUA_C1mkf2jorVXUu43_VYpCEPiLpJ29MD-4bmmiY.js",
+        "js_integrity": "sha256-XwYUA/C1mkf2jorVXUu43/VYpCEPiLpJ29MD+4bmmiY=",
+        "wasm": "./runtime/effindom-ui-v2.wasm64-simd.5S6HWGcWnIm_9tnbjY2_-FvtO7LQfC_qAAu01jY2D6E.wasm",
+        "wasm_integrity": "sha256-5S6HWGcWnIm/9tnbjY2/+FvtO7LQfC/qAAu01jY2D6E="
       }
     },
     "wasm64": {
@@ -24,10 +24,10 @@
         "wasm_integrity": "sha256-ZAsAOfMrH8Aj7qesE00IMmBb7Fy4f34s6pZjCeZeUxo="
       },
       "ui": {
-        "js": "./runtime/effindom-ui-v2.wasm64.Lp4TryH-eQQ2LCglJu_R02yao7m-cTpecWnHbHatCNw.js",
-        "js_integrity": "sha256-Lp4TryH+eQQ2LCglJu/R02yao7m+cTpecWnHbHatCNw=",
-        "wasm": "./runtime/effindom-ui-v2.wasm64.E_szuHv0USjg7ABvPjI3bCQo74aj-S66dgczQoNvOxs.wasm",
-        "wasm_integrity": "sha256-E/szuHv0USjg7ABvPjI3bCQo74aj+S66dgczQoNvOxs="
+        "js": "./runtime/effindom-ui-v2.wasm64.XwYUA_C1mkf2jorVXUu43_VYpCEPiLpJ29MD-4bmmiY.js",
+        "js_integrity": "sha256-XwYUA/C1mkf2jorVXUu43/VYpCEPiLpJ29MD+4bmmiY=",
+        "wasm": "./runtime/effindom-ui-v2.wasm64.B8x1ehYpI4jsiJaXxlPIxVb-AzpzMDR__ZYOsgS_8hU.wasm",
+        "wasm_integrity": "sha256-B8x1ehYpI4jsiJaXxlPIxVb+AzpzMDR//ZYOsgS/8hU="
       }
     },
     "wasm32-simd": {
@@ -38,10 +38,10 @@
         "wasm_integrity": "sha256-vJS3sRC7CY9RUcP0mshZ/d5jPMnYCmSsn4JSrPDUUX0="
       },
       "ui": {
-        "js": "./runtime/effindom-ui-v2.wasm32-simd.h1369EzClzCy-M43UivfD8jZnBwe-jADnnw5alXJbdg.js",
-        "js_integrity": "sha256-h1369EzClzCy+M43UivfD8jZnBwe+jADnnw5alXJbdg=",
-        "wasm": "./runtime/effindom-ui-v2.wasm32-simd.qhwkvRcYiVlI5svTgGRvN_Z1ySeUeqDzr0h5YogrKHI.wasm",
-        "wasm_integrity": "sha256-qhwkvRcYiVlI5svTgGRvN/Z1ySeUeqDzr0h5YogrKHI="
+        "js": "./runtime/effindom-ui-v2.wasm32-simd.lS52cAcmwwGwpA0VOkPsYTpZitH04x4FSN0Xk14kqSA.js",
+        "js_integrity": "sha256-lS52cAcmwwGwpA0VOkPsYTpZitH04x4FSN0Xk14kqSA=",
+        "wasm": "./runtime/effindom-ui-v2.wasm32-simd.h0p5YJBBdDjcf5KelOMLzx67QqW6Sgpmy0V97rAP4hA.wasm",
+        "wasm_integrity": "sha256-h0p5YJBBdDjcf5KelOMLzx67QqW6Sgpmy0V97rAP4hA="
       }
     },
     "wasm32": {
@@ -52,10 +52,10 @@
         "wasm_integrity": "sha256-0cBivWBXu/7PwkF2XBCbIOEhfusjFiCekGTMLgbUKjc="
       },
       "ui": {
-        "js": "./runtime/effindom-ui-v2.wasm32.h1369EzClzCy-M43UivfD8jZnBwe-jADnnw5alXJbdg.js",
-        "js_integrity": "sha256-h1369EzClzCy+M43UivfD8jZnBwe+jADnnw5alXJbdg=",
-        "wasm": "./runtime/effindom-ui-v2.wasm32.YSweCDLBHIicdzjAvLEIhen51p6iyk6YYvYbSnJ8Qyo.wasm",
-        "wasm_integrity": "sha256-YSweCDLBHIicdzjAvLEIhen51p6iyk6YYvYbSnJ8Qyo="
+        "js": "./runtime/effindom-ui-v2.wasm32.lS52cAcmwwGwpA0VOkPsYTpZitH04x4FSN0Xk14kqSA.js",
+        "js_integrity": "sha256-lS52cAcmwwGwpA0VOkPsYTpZitH04x4FSN0Xk14kqSA=",
+        "wasm": "./runtime/effindom-ui-v2.wasm32.DEkEiT04LpsRJBDnr9MHrZjFYa5UsjyOK4SpnF_UU48.wasm",
+        "wasm_integrity": "sha256-DEkEiT04LpsRJBDnr9MHrZjFYa5UsjyOK4SpnF/UU48="
       }
     }
   },
@@ -103,5 +103,5 @@
       }
     }
   },
-  "runtime_set_hash": "WhkBHLgc3FIfLkv_Q82cCn3OFdY2o2Q8RIPeV0N1dLw"
+  "runtime_set_hash": "nFRBKv-PHUmKIDTCyxIozuRxm43CbVrIfWdT2IjAe8g"
 }

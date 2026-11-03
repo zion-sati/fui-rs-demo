@@ -19,7 +19,7 @@ pub(crate) fn create_fetch_section() -> FlexBox {
         } else {
             DemoButtonTone::Secondary
         };
-        let control = ui! { demo_button(button_label, tone).width(170.0, Unit::Pixel).height(60.0, Unit::Pixel) };
+        let control = ui! { demo_button(button_label, tone).min_width(170.0, Unit::Pixel).min_height(60.0, Unit::Pixel) };
         control.on_click({
             let active = active.clone();
             let status = status.clone();

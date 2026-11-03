@@ -4226,6 +4226,9 @@ function createUiImportModule(deps) {
     ui_set_smooth_scrolling(handle, smoothScrolling) {
       deps.getRuntime().ui._ui_set_smooth_scrolling(toBigIntHandle(handle), smoothScrolling ? 1 : 0);
     },
+    ui_set_scroll_wheel_latching(handle, latching) {
+      deps.getRuntime().ui._ui_set_scroll_wheel_latching(toBigIntHandle(handle), latching ? 1 : 0);
+    },
     ui_set_scroll_content_size(handle, contentWidth, contentHeight) {
       deps.getRuntime().ui._ui_set_scroll_content_size(toBigIntHandle(handle), contentWidth, contentHeight);
     },

@@ -105,9 +105,9 @@ dependencies = [
 
 [[package]]
 name = "fui-rs"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84ac776143602911dbb9cf58bfa65b801eb3f2c390884f2fd4e363e6477aa702"
+checksum = "21382c6ad481a8e2faa35aa014a21213f3630bf20ee59b74fae6e6dc8e5f0c5f"
 
 [[package]]
 name = "fui-rs-demo"
